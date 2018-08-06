@@ -1,4 +1,4 @@
-## cryptopals crypto challenges
+## Cryptopals Crypto Challenges
 
 https://cryptopals.com/
 
