@@ -1,29 +1,16 @@
 #!/usr/bin/env python3
 
-from Crypto.Cipher import AES
-import random, base64
-random.seed()
+import base64, cryptolib
 
-def randbin(S):
-    return bytes(random.randint(0,255) for _ in range(S))
-
-def PKCS7(BS,M):
-    assert(BS<=256)
-    r = len(M)%BS
-    if r>0:
-        M += bytes([BS-r]*(BS-r))
-    return M
-
-MysteryKey = randbin(16)
+MysteryKey = cryptolib.randbin(16)
 MysterySuff = base64.b64decode('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK')
 
 def mystery(M0):
-    M = PKCS7(16,M0+MysterySuff)
-    Ciph = AES.new(MysteryKey,AES.MODE_ECB)
-    C = Ciph.encrypt(M)
+    M = cryptolib.PKCS7_pad(M0+MysterySuff,16)
+    C = cryptolib.AES_ECB_encrypt(MysteryKey,M)
     return C
 
-def is_ECB(BS,F):
+def is_ECB(F,BS=16):
     M = bytes(3*BS)
     C = mystery(M)
     assert(len(C)%BS==0)
@@ -41,7 +28,7 @@ def guess_block_size(F):
 
 def guess_ecb_suffix(F):
     BS,off = guess_block_size(F)
-    assert(is_ECB(BS,F))
+    assert(is_ECB(F,BS))
     SuffSize = len(F(b''))-off
     Suff = bytearray(BS-1)
     for i in range(SuffSize):

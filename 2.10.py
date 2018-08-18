@@ -2,9 +2,7 @@
 
 import base64
 from Crypto.Cipher import AES
-
-def bxor(A,B):
-    return bytes(a^b for a,b in zip(A,B))
+from cryptolib import bxor
 
 def CBC_encrypt(BS, Encrypt, Combine, M, IV):
     C = [IV]

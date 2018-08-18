@@ -1,29 +1,17 @@
 #!/usr/bin/env python3
 
-import base64
-
-def nb_ones(x):
-    o = 0
-    while x:
-        o += x&1
-        x >>= 1
-    return o
-
-def hamming(A,B):
-    assert(len(A)==len(B))
-    return sum(nb_ones(a^b) for a,b in zip(A,B))
+import base64, cryptolib
 
 # Hamming test
 #A = b'this is a test'
 #B = b'wokka wokka!!!'
-#print(hamming(A,B))
+#print(cryptolib.hamming(A,B))
 
-Alpha = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ '.!\n\r\t")
 def analyze_single(I):
     Smax = -1
     for k in range(256):
-        O = bytes(k^i for i in I)
-        S = sum(int(chr(c) in Alpha) for c in O)
+        O = cryptolib.bxor_repeat(I,bytes([k]))
+        S = sum(int(chr(c) in cryptolib.Alphanum) for c in O)
         if S>Smax:
             Smax = S
             Omax = O
@@ -32,7 +20,7 @@ def analyze_single(I):
 
 def analyze(Data, KSmin=2, KSmax=40):
     B = 10
-    norm = (lambda KS: sum(hamming(Data[i*KS:(i+1)*KS],Data[(i+1)*KS:(i+2)*KS]) for i in range(B))/(B*KS))
+    norm = (lambda KS: sum(cryptolib.hamming(Data[i*KS:(i+1)*KS],Data[(i+1)*KS:(i+2)*KS]) for i in range(B))/(B*KS))
     KS = min(range(KSmin,KSmax+1), key=norm)
     print('Detected key size:',KS)
     OSubs = [analyze_single(Data[i::KS]) for i in range(KS)]

@@ -1,40 +1,25 @@
 #!/usr/bin/env python3
 
-# chosen-plaintext attack
-
-from Crypto.Cipher import AES
-import random
+import cryptolib, random
 random.seed()
-
-def randbin(S):
-    return bytes(random.randint(0,255) for _ in range(S))
-
-def PKCS7(BS,M):
-    assert(BS<=256)
-    r = len(M)%BS
-    if r>0:
-        M += bytes([BS-r]*(BS-r))
-    return M
 
 def mystery(M0):
     global ecb  # to check the result
-    Key = randbin(16)
-    Pref = randbin(random.randint(5,10))
-    Suff = randbin(random.randint(5,10))
-    M = PKCS7(16,Pref+M0+Suff)
+    Key = cryptolib.randbin(16)
+    Pref = cryptolib.randbin(random.randint(5,10))
+    Suff = cryptolib.randbin(random.randint(5,10))
+    M = cryptolib.PKCS7_pad(Pref+M0+Suff,16)
     ecb = (random.randint(0,1)==0)
     if ecb:
-        Ciph = AES.new(Key,AES.MODE_ECB)
-        C = Ciph.encrypt(M)
+        C = cryptolib.AES_ECB_encrypt(Key,M)
     else:
-        IV = randbin(16)
-        Ciph = AES.new(Key,AES.MODE_CBC,IV)
-        C = Ciph.encrypt(M)
+        IV = cryptolib.randbin(16)
+        C = cryptolib.AES_CBC_encrypt(Key,IV,M)
     return C
 
-def is_ECB(F):
-    BS = 16
-    M = b'\x00'*(3*BS)
+# chosen-plaintext attack
+def is_ECB(F, BS=16):
+    M = bytes(3*BS)
     C = mystery(M)
     assert(len(C)%BS==0)
     cnt = len(set(C[i:i+BS] for i in range(0,len(C),BS)))
