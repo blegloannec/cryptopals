@@ -41,19 +41,20 @@ def AES_CBC_decrypt(Key, IV, M):
     return C.decrypt(M)
 
 def PKCS7_pad(M, BS=16):
-    assert(BS<=256)
+    assert 0<BS<256
     r = len(M)%BS
-    if r>0:
-        M += bytes([BS-r]*(BS-r))
+    M += bytes([BS-r]*(BS-r))
     return M
 
 class InvalidPadding(Exception):
     pass
 
 def PKCS7_unpad(M, BS=16):
-    if len(M)%BS!=0:
-        raise InvalidPadding('Invalid message size')
-    if M and M[-1]<BS:
+    if M:
+        if len(M)%BS!=0:
+            raise InvalidPadding('Invalid message size')
+        if not 0<M[-1]<=BS:
+            raise InvalidPadding('Invalid padding size')
         if any(M[i]!=M[-1] for i in range(len(M)-M[-1],len(M)-1)):
             raise InvalidPadding('Invalid padding content')
         M = M[:-M[-1]]
