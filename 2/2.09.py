@@ -3,4 +3,4 @@
 import cryptolib
 
 M = b'YELLOW SUBMARINE'
-print(cryptolib.PKCS7_pad(M,20))
+print(cryptolib.PKCS7_pad(M, 20))

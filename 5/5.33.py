@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import random, hashlib
-random.seed()
+import secrets, hashlib
 
 # Diffie-Hellman takes place in (Z/pZ)* with p a large prime
 # g is a generator of this group
@@ -11,8 +10,8 @@ p = int(hexp,16)
 g = 2
 
 def gen_key(p,g):
-    a = random.randint(1,p-1)  # private
-    A = pow(g,a,p)             # public
+    a = secrets.randbelow(p)  # private
+    A = pow(g,a,p)            # public
     return a,A
 
 a,A = gen_key(p,g)
@@ -24,7 +23,7 @@ b,B = gen_key(p,g)
 # common secret
 sa = pow(B,a,p)  # g^(ab)
 sb = pow(A,b,p)  # idem
-assert(sa==sb)
+assert sa==sb
 
 # deriving a 128-bit key
 siz = 4*len(hexp)

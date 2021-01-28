@@ -10,8 +10,8 @@ def parse_profile(S):
     return D
 
 def profile_for(email):
-    assert(c not in email for c in '&=')
-    prof = ('email=%s&uid=10&role=user'%email).encode()
+    assert all(c not in email for c in '&=')
+    prof = f'email={email}&uid=10&role=user'.encode()
     return prof
 
 BS = 16

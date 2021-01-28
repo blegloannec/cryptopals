@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-F = open('8.txt','r')
+F = open('data/8.txt', 'r')
 I = [L.strip() for L in F.readlines()]
 F.close()
 

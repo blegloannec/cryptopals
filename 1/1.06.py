@@ -10,7 +10,7 @@ import base64, cryptolib
 def analyze_single(I):
     Smax = -1
     for k in range(256):
-        O = cryptolib.bxor_repeat(I,bytes([k]))
+        O = cryptolib.bxor_repeat(I, bytes([k]))
         S = sum(int(chr(c) in cryptolib.Alphanum) for c in O)
         if S>Smax:
             Smax = S
@@ -22,7 +22,7 @@ def analyze(Data, KSmin=2, KSmax=40):
     B = 10
     norm = (lambda KS: sum(cryptolib.hamming(Data[i*KS:(i+1)*KS],Data[(i+1)*KS:(i+2)*KS]) for i in range(B))/(B*KS))
     KS = min(range(KSmin,KSmax+1), key=norm)
-    print('Detected key size:',KS)
+    print('Detected key size:', KS)
     OSubs = [analyze_single(Data[i::KS]) for i in range(KS)]
     K = bytes(k for k,_ in OSubs)
     OSubs = [Sub for _,Sub in OSubs]
@@ -30,11 +30,11 @@ def analyze(Data, KSmin=2, KSmax=40):
     return K,O
 
 def main():
-    F = open('6.txt','r')
+    F = open('data/6.txt','r')
     Data = base64.b64decode(F.read())
     F.close()
     K,O = analyze(Data)
-    print('Discovered key:',K.decode())
+    print('Discovered key:', K.decode())
     print()
     print(O.decode())
 
