@@ -1,5 +1,6 @@
 import itertools, os, secrets
 from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
 
 Alphanum = set("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ '.!\n\r\t")
 
