@@ -2,11 +2,14 @@
 
 import base64, cryptolib
 
-MysteryKey = cryptolib.randbin(16)
+## SECRET DATA
+_BS = 16
+MysteryKey = cryptolib.randbin(_BS)
 MysterySuff = base64.b64decode('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK')
+##
 
 def mystery(M0):
-    M = cryptolib.PKCS7_pad(M0+MysterySuff, 16)
+    M = cryptolib.PKCS7_pad(M0+MysterySuff, _BS)
     C = cryptolib.AES_ECB_encrypt(MysteryKey, M)
     return C
 
@@ -31,9 +34,9 @@ def guess_block_size(F):
 def guess_ecb_suffix(F):
     BS,off = guess_block_size(F)
     assert is_ECB(F,BS)
-    SuffSize = len(F(b''))-off
+    suff_size = len(F(b''))-off
     Suff = bytearray(BS-1)
-    for i in range(SuffSize):
+    for i in range(suff_size):
         q,r = divmod(i,BS)
         C = F(bytes(BS-1-r))[q*BS:(q+1)*BS]
         M = Suff[-BS+1:]
@@ -48,5 +51,5 @@ def guess_ecb_suffix(F):
 
 if __name__=='__main__':
     GuessedSuff = guess_ecb_suffix(mystery)
-    assert GuessedSuff==MysterySuff
+    assert GuessedSuff == MysterySuff
     print(GuessedSuff.decode(), end='')
