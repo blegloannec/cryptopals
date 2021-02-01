@@ -53,11 +53,11 @@ class Bob(Thread):
         key = SHA1.new(sdata).digest()[:BS]
         ciph, iv = self.inbox.get()
         msg = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(ciph), BS)
-        print('Bob:', msg)
+        print('Bob:  ', msg)
         iv = get_random_bytes(BS)
         ciph = AES.new(key, AES.MODE_CBC, iv).encrypt(pad(msg, BS))
         self.outbox.put((ciph, iv))
-        print('Bob: done')
+        print('Bob:   done')
 
 
 def std_scenario():
@@ -87,12 +87,12 @@ class Eve(Thread):
         self.outB.put((ciph, iv))
         key = SHA1.new(b'').digest()[:BS]  # s = 0
         msg = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(ciph), BS)
-        print('Eve:', msg)
+        print('Eve:  ', msg)
         ciph, iv = self.inB.get()
         self.outA.put((ciph, iv))
         msg = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(ciph), BS)
-        print('Eve:', msg)
-        print('Eve: done')
+        print('Eve:  ', msg)
+        print('Eve:   done')
 
 
 def mitm_scenario():
