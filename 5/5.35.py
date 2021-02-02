@@ -3,6 +3,7 @@
 from threading import Thread
 from queue import SimpleQueue
 import dhlib
+from dhlib import int_to_bytes
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Hash import SHA1
@@ -27,8 +28,7 @@ class Alice(Thread):
         self.outbox.put(self.KA)
         KB = self.inbox.get()
         s = pow(KB, self.Ka, self.p)
-        sdata = s.to_bytes((s.bit_length()+7)//8, 'big')
-        key = SHA1.new(sdata).digest()[:BS]
+        key = SHA1.new(int_to_bytes(s)).digest()[:BS]
         print('Alice: key', key.hex())
         iv = get_random_bytes(BS)
         msg = b'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.'
@@ -54,8 +54,7 @@ class Bob(Thread):
         KA = self.inbox.get()
         self.outbox.put(KB)
         s = pow(KA, Kb, p)
-        sdata = s.to_bytes((s.bit_length()+7)//8, 'big')
-        key = SHA1.new(sdata).digest()[:BS]
+        key = SHA1.new(int_to_bytes(s)).digest()[:BS]
         print('Bob:   key', key.hex())
         ciph, iv = self.inbox.get()
         msg = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(ciph), BS)
@@ -184,13 +183,11 @@ class Eve(Thread):
         assert KB==1 or KB==self.p-1
         self.outA.put(KB)
         self.s = 1 if KB==1 or even_Ka else self.p-1
-        sdata = self.s.to_bytes((self.s.bit_length()+7)//8, 'big')
-        self.key = SHA1.new(sdata).digest()[:BS]
+        self.key = SHA1.new(int_to_bytes(self.s)).digest()[:BS]
     
     def attack3_active(self, ciphA, ivA):
         sA = self.p - self.s
-        sdataA = sA.to_bytes((sA.bit_length()+7)//8, 'big')
-        keyA = SHA1.new(sdataA).digest()[:BS]
+        keyA = SHA1.new(int_to_bytes(sA)).digest()[:BS]
         print("Eve:   Alice's key", keyA.hex())
         msg = unpad(AES.new(keyA, AES.MODE_CBC, ivA).decrypt(ciphA), BS)
         print('Eve:  ', msg)

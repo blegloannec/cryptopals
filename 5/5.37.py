@@ -3,11 +3,10 @@
 from threading import Thread
 from queue import SimpleQueue
 import dhlib
+from dhlib import int_to_bytes
 from Cryptodome.Hash import SHA256, HMAC
 from Cryptodome.Random import get_random_bytes
 from Cryptodome.Random.random import randint
-
-int_to_bytes = lambda n: n.to_bytes((n.bit_length()+7)//8, 'big')
 
 BS = 16
 _N, _G = dhlib._p, 2
@@ -76,7 +75,7 @@ class SRPServer(Thread):
         self.outbox.put((salt, B))
         u = int.from_bytes(SHA256.new(int_to_bytes(KA)+int_to_bytes(B)).digest(), 'big')
         sec = pow(KA*pow(KX, u, self.N), self.Kb, self.N)
-        # sec = g^(Ka+Kx*u+Kb)
+        # sec = g^((Ka+Kx*u)*Kb)
         key = SHA256.new(int_to_bytes(sec)).digest()
         print('Server: sec', sec)
         print('Server: key', key.hex())

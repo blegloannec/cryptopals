@@ -2,6 +2,10 @@
 
 import secrets
 
+# helper
+int_to_bytes = lambda n: n.to_bytes((n.bit_length()+7)//8, 'big')
+
+
 # the following parameters come from RFC 3526 (1536-bit MODP group)
 # https://datatracker.ietf.org/doc/rfc3526/?include_text=1
 # https://tools.ietf.org/html/rfc3526

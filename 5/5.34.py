@@ -3,6 +3,7 @@
 from threading import Thread
 from queue import SimpleQueue
 import dhlib
+from dhlib import int_to_bytes
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Hash import SHA1
@@ -25,8 +26,7 @@ class Alice(Thread):
         self.outbox.put((self.p, self.g, self.KA))
         KB = self.inbox.get()
         s = pow(KB, self.Ka, self.p)
-        sdata = s.to_bytes((s.bit_length()+7)//8, 'big')
-        key = SHA1.new(sdata).digest()[:BS]
+        key = SHA1.new(int_to_bytes(s)).digest()[:BS]
         iv = get_random_bytes(BS)
         msg = b'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
         ciph = AES.new(key, AES.MODE_CBC, iv).encrypt(pad(msg, BS))
@@ -49,8 +49,7 @@ class Bob(Thread):
         Kb, KB = dhlib.gen_key(p, g)
         self.outbox.put(KB)
         s = pow(KA, Kb, p)
-        sdata = s.to_bytes((s.bit_length()+7)//8, 'big')
-        key = SHA1.new(sdata).digest()[:BS]
+        key = SHA1.new(int_to_bytes(s)).digest()[:BS]
         ciph, iv = self.inbox.get()
         msg = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(ciph), BS)
         print('Bob:  ', msg)
