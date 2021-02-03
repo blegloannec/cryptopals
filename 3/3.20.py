@@ -7,7 +7,7 @@ from Cryptodome.Random import get_random_bytes
 BS = 16
 
 
-data_file = 'data/19.txt'  # NB: this also works well for 20.txt
+data_file = 'data/20.txt'
 # we cheat a bit by setting the input to lowercase and extracting the charset
 _DATA = [base64.b64decode(line.strip()).lower()
          for line in open(data_file, 'rb').readlines()]
@@ -19,30 +19,25 @@ CIPH = [bytearray(AES.new(_key, AES.MODE_CTR, nonce=zero).encrypt(msg))
 
 
 # because the nonce is the same, all the "columns" of the ciphertexts are
-# xored with the same byte, allowing frequency attacks (provided we have
-# enough texts)
-# here we do a more basic & brutal charset attack (not exactly what was
-# expected, but, as suggested by the statement, this is not really
-# interesting anyway...)
-DECIPH = [bytearray(ciph) for ciph in CIPH]
-nb_col = max(len(ciph) for ciph in CIPH)
-for b in range(nb_col):
-    col = [(i, ciph[b]) for i, ciph in enumerate(CIPH) if b < len(ciph)]
+# xored with the same byte
+period = min(len(ciph) for ciph in CIPH)
+DECIPH = [bytearray(ciph[:period]) for ciph in CIPH]
+for b in range(period):
     score_max = 0
     for c in ALPHA:
-        x = col[0][1]^c
+        x = DECIPH[0][b]^c
         # trying xor byte b = x
-        if all(c^x in ALPHA for _, c in col):
+        if all(deciph[b]^x in ALPHA for deciph in DECIPH):
             # this gives an acceptable charset
             # let us maximize the number of [ a-z]
-            score = sum(int(c^x == ord(' ') or
-                            ord('a') <= c^x <= ord('z'))
-                        for _, c in col)
+            score = sum(int(deciph[b]^x == ord(' ') or
+                            ord('a') <= deciph[b]^x <= ord('z'))
+                        for deciph in DECIPH)
             if score > score_max:
                 score_max = score
                 x_max = x
-    for i, _ in col:
-        DECIPH[i][b] ^= x_max
+    for deciph in DECIPH:
+        deciph[b] ^= x_max
 
 
 # check
