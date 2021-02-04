@@ -61,16 +61,16 @@ class SRPServer(Thread):
         salt = get_random_bytes(BS)
         Kx = int.from_bytes(SHA256.new(salt+pwd).digest(), 'big')
         KX = pow(self.g, Kx, self.N)
-        self.DB[mel] = (salt, Kx, KX)  # salt & db entry DH key
+        self.DB[mel] = (salt, KX)  # salt & pwd DH "public" key
     
     def run(self):
         assert self.outbox is not None
         # get client id and retrieve its entry
         mel, KA = self.inbox.get()   
         assert mel in self.DB
-        salt, Kx, KX = self.DB[mel]
+        salt, KX = self.DB[mel]
         # B = k*KX + KB
-        # linear mix of the entry pub. key with the server pub. key
+        # linear mix of the pwd "pub." key with the server "pub." key
         B = (self.k*KX + self.KB) % self.N
         self.outbox.put((salt, B))
         u = int.from_bytes(SHA256.new(int_to_bytes(KA)+int_to_bytes(B)).digest(), 'big')
