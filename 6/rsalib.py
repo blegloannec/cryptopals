@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from Crypto.Util.number import getPrime
+from Cryptodome.Util.number import getPrime
 
 def gen_key(size=1<<10):
     e = 3  # we always want e = 3 here

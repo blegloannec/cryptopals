@@ -31,6 +31,7 @@ def decrypt(ciph: bytes) -> bool:
     return TARGET in data
 
 if __name__=='__main__':
+    assert not decrypt(encrypt(TARGET.decode()))
     # We have seen in previous challenges how to detect:
     #  - ECB/CBC mode
     #  - the block size BS

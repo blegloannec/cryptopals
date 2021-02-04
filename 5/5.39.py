@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #from math import gcd
-from Crypto.Util.number import getPrime
+from Cryptodome.Util.number import getPrime
 from Cryptodome.Random import get_random_bytes
 import base64
 

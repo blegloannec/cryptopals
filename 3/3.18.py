@@ -27,6 +27,6 @@ print(AES_CTR(key, nonce, ciph))
 
 
 # and using Cryptodome (requires a custom counter)
-from Crypto.Util import Counter
+from Cryptodome.Util import Counter
 ctr = Counter.new(8*BS//2, prefix=nonce, initial_value=0, little_endian=True)
 print(AES.new(key, AES.MODE_CTR, counter=ctr).decrypt(ciph))
