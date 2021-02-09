@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 from Cryptodome.Util.number import getPrime
+from collections import namedtuple
+
+PrivKey = namedtuple('PrivKey', ('d', 'n'))
+PubKey  = namedtuple('PubKey',  ('e', 'n'))
 
 def gen_key(size=1<<10):
     e = 3  # we always want e = 3 here
@@ -13,16 +17,16 @@ def gen_key(size=1<<10):
     n = p*q
     phi = (p-1)*(q-1)
     d = pow(e, -1, phi)
-    K = (e, n)
-    k = (d, n)
+    K = PubKey(e, n)
+    k = PrivKey(d, n)
     return (k, K)
 
-def encrypt(K, m):
-    e, n = K
+def encrypt(K, m: int) -> int:
+    e, n = K  # avoid K.e to allow signature ~ encrypt with PrivKey
     return pow(m, e, n)
 
 # of course same as encrypt, but semantics...
-def decrypt(k, c):
+def decrypt(k, c: int) -> int:
     d, n = k
     return pow(c, d, n)
 
