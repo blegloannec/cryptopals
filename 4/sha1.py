@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
-
 msk32 = (1<<32)-1
-rot = lambda n,r: (n>>(32-r)) | ((n<<r)&msk32)
+rot = lambda n,r: (n>>(32-r)) | ((n<<r)&msk32)  # int32 left rotate
 
 # https://en.wikipedia.org/wiki/SHA-1
 
@@ -87,4 +85,5 @@ def sha1(M: bytes, H0=None, do_pad=True) -> bytes:
 
 
 if __name__=='__main__':
+    import sys
     print(sha1(sys.stdin.buffer.read()).hex())
