@@ -99,3 +99,4 @@ if __name__=='__main__':
     print('running.')
     mac = guess_mac()
     print(f'guess  > {mac}')
+    assert mac is not None  # guess failed

@@ -42,7 +42,7 @@ class TimingLeakWebApp(BaseHTTPRequestHandler):
         for a,b in zip(A,B):
             if a!=b:
                 return False
-            time.sleep(0.0025)  # /!\ this time 2.5 ms is NOT enough
+            time.sleep(0.002)  # /!\ this time 2 ms is NOT enough
         return True
 
     def do_GET(self):
@@ -72,32 +72,32 @@ import requests
 def guess_mac(fil='foo'):
     url = f'http://localhost:{PORT}/'
     params = {'file': fil}
-    # guessing k digits at a time multiplies the delay by k
-    # the complexity is ~ S/k * B^k
-    #                 for B the base and
-    #                     S the size of the hash in base B
-    # below we consider 2 digits at a time to double the delay
-    # which is good enough here
+    # Guessing k digits at a time multiplies the delay by k.
+    #   However the complexity is ~ S/k * B^k
+    #   for B the base and S the size of the hash in base B,
+    #   which is not very interesting (exponential in k)...
+    # It is more efficient to simply accumulate the times of
+    # k identical requests for each guess.
+    #   (complexity S*k for ~ the same effect on the delay)
     sig = ['0']*40
-    for i in range(0, len(sig), 2):
+    for i in range(len(sig)):
         dtmax = 0.
         for c in '0123456789abcdef':
             sig[i] = c
-            for d in '0123456789abcdef':
-                sig[i+1] = d
-                params['signature'] = ''.join(sig)
-                req = requests.get(url, params=params)
-                if req:
-                    return ''.join(sig)
-                else:
-                    dt = req.elapsed.total_seconds()
-                    print(f'{1000.*dt:.2f} ms')
-                    if dt>dtmax:
-                        dtmax = dt
-                        cmax = c
-                        dmax = d
-        sig[i]   = cmax
-        sig[i+1] = dmax
+            params['signature'] = ''.join(sig)
+            req = requests.get(url, params=params)
+            if req:
+                return ''.join(sig)
+            else:
+                dt = req.elapsed.total_seconds()
+                for _ in range(2):  # additional requests
+                    req = requests.get(url, params=params)
+                    dt += req.elapsed.total_seconds()
+                print(f'{1000.*dt:.2f} ms')
+                if dt>dtmax:
+                    dtmax = dt
+                    cmax = c
+        sig[i] = cmax
 
 
 ## ===== MAIN ===== ##
@@ -109,3 +109,4 @@ if __name__=='__main__':
     print('running.')
     mac = guess_mac()
     print(f'guess  > {mac}')
+    assert guess is not None  # guess failed
