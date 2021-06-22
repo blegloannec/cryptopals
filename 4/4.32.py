@@ -10,11 +10,6 @@ def bxor(A,B):
     assert len(A)==len(B)
     return bytes(a^b for a,b in zip(A,B))
 
-# Handmade HMAC - https://en.wikipedia.org/wiki/HMAC
-# equivalent to:
-#   from Cryptodome.Hash import HMAC, SHA1
-#   HMAC.new(K, msg=m, digestmod=SHA1).digest()
-
 def HMAC_SHA1(K: bytes, m: bytes) -> bytes:
     H = lambda x: hashlib.sha1(x).digest()
     BS = 64  # 512 bits = 64 bytes

@@ -14,6 +14,9 @@ def bxor(A,B):
 # equivalent to:
 #   from Cryptodome.Hash import HMAC, SHA1
 #   HMAC.new(K, msg=m, digestmod=SHA1).digest()
+# or simply (std lib.):
+#   import hmac
+#   hmac.new(K, msg=m, digestmod='sha1').digest()
 
 def HMAC_SHA1(K: bytes, m: bytes) -> bytes:
     H = lambda x: hashlib.sha1(x).digest()
