@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Random import get_random_bytes
@@ -23,6 +22,7 @@ def merkle_damgard(H: bytes, M: bytes) -> bytes:
     return H
 
 def random_collision(H0: bytes):
+    # O(√ hash bit length) by "birthday attack"
     Pred = {}
     while True:
         B = get_random_bytes(BS)
@@ -38,14 +38,7 @@ def gen_2n_collisions(H: bytes, n):
         H = compression(H, M[-1][0])
     return M
 
-
-## ===== Double MD ===== ##
-def double_md(H1: bytes, H2: bytes, M: bytes) -> bytes:
-    return merkle_damgard(H1, M) + merkle_damgard(H2, M)
-
-
 if __name__=='__main__':
-    # Simple MD collisions
     HS = 3
     n  = 10
     H0 = get_random_bytes(HS)
@@ -63,7 +56,34 @@ if __name__=='__main__':
             assert H == H1
     print('ok.\n')
 
-    # Double MD collision
+
+## ===== Double MD ===== ##
+def double_md(H1: bytes, H2: bytes, M: bytes) -> bytes:
+    return merkle_damgard(H1, M) + merkle_damgard(H2, M)
+
+def brute_collisions(MM, H0):
+    # naive approach considering the second hash as a black-box
+    Pred = {}
+    for P in itertools.product(*MM):
+        M0 = b''.join(P)
+        H = merkle_damgard(H0, M0)
+        if H in Pred:
+            yield (Pred[H], M0)
+        else:
+            Pred[H] = M0
+
+def backtrack_md_collisions(_Pred, MM, H0, M=b'', i=0):
+    # much faster approach computing the MD hash on-the-fly
+    if i==len(MM):
+        if H0 in _Pred:
+            yield (_Pred[H0], M)
+        else:
+            _Pred[H0] = M
+    else:
+        for B in MM[i]:
+            yield from backtrack_md_collisions(_Pred, MM, compression(H0, B), M+B, i+1)
+
+if __name__=='__main__':
     HS1 = 3
     HS2 = 4
     n   = 4*HS2  # gen. 2^(8*HS2/2) candidates
@@ -73,23 +93,20 @@ if __name__=='__main__':
     print(f'H02 = {H02.hex()} of size {8*HS2} bits')
     while True:
         print(f'Generating 2^{n} collisions for the size {8*HS1} hash...', end=' ', flush=True)
-        M = gen_2n_collisions(H01, n)
+        MM = gen_2n_collisions(H01, n)
         print('ok.')
         print(f'Looking for a collision for the size {8*HS2} hash...', end=' ', flush=True)
-        Pred = {}
-        for P in itertools.product(*M):
-            M0 = b''.join(P)
-            H = merkle_damgard(H02, M0)
-            if H in Pred:
-                M1, M2 = Pred[H], M0
-                assert M1 != M2
-                print('found!')
-                print(f'M1 = {M1.hex()}')
-                print(f'M2 = {M2.hex()}')
-                H1 = double_md(H01, H02, M1)
-                H2 = double_md(H01, H02, M2)
-                assert H1 == H2
-                print(f'H  = {H1.hex()}')
-                sys.exit()
-            Pred[H] = M0
-        print('not found, trying again.')
+        try:
+            #M1, M2 = next(brute_collisions(MM, H02))
+            M1, M2 = next(backtrack_md_collisions({}, MM, H02))
+            assert M1 != M2
+            H1 = double_md(H01, H02, M1)
+            H2 = double_md(H01, H02, M2)
+            assert H1 == H2
+            print('found!')
+            print(f'M1 = {M1.hex()}')
+            print(f'M2 = {M2.hex()}')
+            print(f'H  = {H1.hex()}')
+            break
+        except StopIteration:
+            print('not found, trying again.')
