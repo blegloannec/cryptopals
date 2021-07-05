@@ -5,6 +5,7 @@
 ## Resources
 
 * [PyCryptodome](https://www.pycryptodome.org/en/latest/src/api.html)
+* [IACR Publications DB](https://www.iacr.org/publications/access.php)
 
 ## Bibliography
 
@@ -32,8 +33,19 @@
 * 6.46-48: [Bleichenbacher's attack (1998)](https://en.wikipedia.org/wiki/Adaptive_chosen-ciphertext_attack#Practical_attacks)
   * Bleichenbacher, [_Chosen Ciphertext Attacks Against Protocols Based on the RSA Encryption Standard PKCS #1_](https://link.springer.com/content/pdf/10.1007%2FBFb0055716.pdf), 1998
   * See also: Fujisaki–Okamoto–Pointcheval–Stern, [_RSA-OAEP Is Secure under the RSA Assumption_](https://www.di.ens.fr/~pointche/Documents/Papers/2004_joc.pdf), 2004
-* 7.49:
+* 7.49-50: [CBC-MAC](https://en.wikipedia.org/wiki/CBC-MAC)
+  * 7.50: Matthew Green's [blog post](https://blog.cryptographyengineering.com/2013/02/15/why-i-hate-cbc-mac/)
+* 7.51:
   * [CRIME attack](https://docs.google.com/presentation/d/11eBmGiHbYcHR9gL5nDyZChu_-lCa2GizeuOfaLU2HOU)
+* 7.52: [Merkle–Damgård](https://en.wikipedia.org/wiki/Merkle%E2%80%93Damg%C3%A5rd_construction)
+  * Joux, [_Multicollisions in iterated hash functions_](https://www.iacr.org/archive/crypto2004/31520306/multicollisions.pdf), 2004
+* 7.53:
+  * Kelsey–Schneier, [_Second Preimages on n-bit Hash Functions for Much Less than 2ⁿ Work_](https://eprint.iacr.org/2004/304.pdf), 2004
+* 7.54:
+  * Kelsey–Kohno, [_Herding Hash Functions and the Nostradamus Attack_](https://homes.cs.washington.edu/~yoshi/papers/EC06/herding.pdf), 2006
+* 7.55:
+  * Wang _et al._, [_Cryptanalysis of the Hash Functions MD4 and RIPEMD_](https://www.iacr.org/archive/eurocrypt2005/34940001/34940001.pdf), 2005
+* 7.56: [On the Security of RC4 in TLS and WPA](http://www.isg.rhul.ac.uk/tls/)
 
 ## Using Python 3
 
