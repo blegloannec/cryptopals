@@ -31,12 +31,14 @@ def random_collision(H0: bytes):
             return (Pred[H], B)
         Pred[H] = B
 
-def gen_2n_collisions(H: bytes, n):
-    M = []
+def gen_2n_collisions(H: bytes, n: int):
+    # generates 2ⁿ collisions for merkle_damgard(H, .)
+    # given as a list of length n of couples of blocks
+    MM = []
     for _ in range(n):
-        M.append(random_collision(H))
-        H = compression(H, M[-1][0])
-    return M
+        MM.append(random_collision(H))
+        H = compression(H, MM[-1][0])
+    return MM
 
 if __name__=='__main__':
     HS = 3

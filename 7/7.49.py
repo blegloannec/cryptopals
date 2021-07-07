@@ -3,102 +3,82 @@
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad
 from Cryptodome.Random import get_random_bytes
+from Cryptodome.Util.strxor import strxor
 from copy import copy
-import re
+from urllib.parse import quote
 
 BS = 16
 
+# the key authenticates the web app. to the bank, not the actual client
+_KEY = get_random_bytes(BS)
 
-def CBC_MAC(P, K, IV=bytes(BS)):
-    return AES.new(K, AES.MODE_CBC, iv=IV).encrypt(pad(P.encode(), BS))[-BS:]
+def CBC_MAC(P: bytes, K: bytes, IV=bytes(BS)):
+    return AES.new(K, AES.MODE_CBC, iv=IV).encrypt(pad(P, BS))[-BS:]
 
 
 class Request:
-    def __init__(self, client, to_id, amount):
-        self.M = f'from={client.id}&to={to_id}&amount={amount}'
+    def __init__(self, from_id, to_id, amount):
+        self.M = f'from={quote(from_id)}&to={quote(to_id)}&amount={quote(str(amount))}'.encode()
         self.IV = get_random_bytes(BS)
-        self.MAC = CBC_MAC(self.M, client.key, self.IV)
+        self.MAC = CBC_MAC(self.M, _KEY, self.IV)
 
 class Request2:
-    def __init__(self, client, to_list):
-        L = ';'.join(f'{to_id}:{amount}' for to_id,amount in to_list)
-        self.M = f'from={client.id}&tx_list={L}'
-        self.MAC = CBC_MAC(self.M, client.key)
+    def __init__(self, from_id, to_list):
+        L = ';'.join(f'{quote(to_id)}:{quote(str(amount))}' for to_id,amount in to_list)
+        self.M = f'from={quote(from_id)}&tx_list={L}'.encode()
+        self.MAC = CBC_MAC(self.M, _KEY)
 
 
 class Client:
-    def __init__(self, name):
-        self.name = name
-        self.key = get_random_bytes(BS)
-        self.id = None
+    def __init__(self, cid):
+        self.id = cid
 
     def request(self, to_id, amount):
-        return Request(self, to_id, amount)
+        return Request(self.id, to_id, amount)
 
     def request2(self, to_list):
-        return Request2(self, to_list)
+        return Request2(self.id, to_list)
 
 
-class Server:
-    def __init__(self):
-        self.Clients = []
-
-    def register(self, client):
-        client.id = len(self.Clients)
-        self.Clients.append(client)
-
-    def check_request(self, req):
-        try:
-            from_id,to_id,amount = re.fullmatch(r'from=(\d+)&to=(\d+)&amount=(\d+)', req.M).groups()
-            from_id = int(from_id)
-            from_client = self.Clients[from_id]
-            to_id = int(to_id)
-            to_client = self.Clients[to_id]
-            assert req.MAC == CBC_MAC(req.M, from_client.key, req.IV)
-            print(f'Accepted: {from_client.name} -> {amount} -> {to_client.name}')
-            return True
-        except:
-            print(f'Rejected: {req.M}')
-        return False
-
-    def check_request2(self, req):
-        #try:
-        from_id,tx_list = re.fullmatch(r'from=(\d+)&tx_list=(.+)', req.M).groups()
-        to_list = [tuple(map(int, ta.split(':'))) for ta in tx_list.split(';')]
-        from_id = int(from_id)
-        from_client = self.Clients[from_id]
-        assert req.MAC == CBC_MAC(req.M, from_client.key)
-        to_list_str = ', '.join(f'{amount} -> {self.Clients[to_id].name}' for to_id,amount in to_list)
-        print(f'Accepted from {from_client.name}: {to_list_str}')
-        return True
-        #except:
-        #    print(f'Rejected: {req.M}')
-        #return False
+def server_check_request(req):
+    if hasattr(req, 'IV'):
+        valid = req.MAC==CBC_MAC(req.M, _KEY, req.IV)
+    else:
+        valid = req.MAC==CBC_MAC(req.M, _KEY)
+    print(('Accepted:' if valid else 'Rejected:'), req.M)
+    return valid
 
 
 if __name__=='__main__':
-    alice = Client('alice')
-    bob = Client('bob')
-    charlie = Client('charlie')
-    eve = Client('eve')
-    bank = Server()
-    bank.register(alice)
-    bank.register(bob)
-    bank.register(charlie)
-    bank.register(eve)
+    alice = Client('A')
+    bob = Client('B')
+    charlie = Client('C')
+    eve = Client('E')
 
-    # client-controlled IV scenario
+    ## Client-controlled IV scenario
+    # intercept Alice's request and redirect it towards Eve's account
     req = alice.request(bob.id, 1000000)
-    assert bank.check_request(req)
+    assert server_check_request(req)
     forged_req = copy(req)
-    forged_req.M = forged_req.M.replace(f'to={bob.id}', f'to={eve.id}')
-    forged_req.IV = bytes(a^b^c for a,b,c in zip(req.M.encode(), forged_req.M.encode(), req.IV))
-    assert bank.check_request(forged_req)
+    forged_req.M = forged_req.M.replace(f'to={bob.id}'.encode(), f'to={eve.id}'.encode())
+    forged_req.IV = strxor(strxor(req.M[:BS], forged_req.M[:BS]), req.IV)
+    assert server_check_request(forged_req)
+    # alternatively, we emit our own request and redirect it from Alice's account
+    req = eve.request(eve.id, 1000000)
+    assert server_check_request(req)
+    forged_req = copy(req)
+    forged_req.M = forged_req.M.replace(f'from={eve.id}'.encode(), f'from={alice.id}'.encode())
+    forged_req.IV = strxor(strxor(req.M[:BS], forged_req.M[:BS]), req.IV)
+    assert server_check_request(forged_req)
 
+    ## Constant IV scenario
     print()
-    # constant IV scenario
     req = alice.request2([(bob.id, 1000), (charlie.id, 2000)])
-    assert bank.check_request2(req)
-    m = pad(req.M.encode(), BS).decode() + f'{}:1000000'
-    p = pad(m.encode())[-BS:]
-    # ?!...
+    assert server_check_request(req)
+    my_req = eve.request2([(eve.id, 1000000)]*2)
+    assert server_check_request(my_req)
+    # we can glue Alice's request to the tail of our own by inserting a block
+    # that will be equal to our first block (xored with the constant IV, 0 here)
+    # after being xored with Alice's MAC (as if it was the IV)
+    my_req.M = pad(req.M, BS) + strxor(req.MAC, my_req.M[:BS]) + my_req.M[BS:]
+    assert server_check_request(my_req)

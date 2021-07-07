@@ -24,7 +24,9 @@ if __name__=='__main__':
     mac = CBC_MAC(CODE, KEY)
     print(mac.hex())
 
-    # arbitrary data solution
+    # Arbitrary data solution
+    # 4 blocks padded msg:
+    # | code₁ | code₂ | mid_block | (pad_block) |
     code        = b"alert('Ayo, the Wu is back!');//"  # length 2*BS
     mid_iv      = AES.new(KEY, AES.MODE_CBC, iv=IV).encrypt(code)[-BS:]
     pad_block   = b'\x10'*BS
@@ -38,9 +40,11 @@ if __name__=='__main__':
     print(mac1.hex())
     assert mac == mac1
 
-    # printable chars solution
+    # Printable chars solution
     # proba: (95/256)^16 ~ 0.37
     # expected #tries: ~7.7e6
+    # 5 blocks padded msg:
+    # | code₁ | code₂ | add_block | mid_block | (pad_block) |
     random.seed(42)  # finds a solution quickly enough
     while not is_char_block(mid_block):
         add_block = rand_char_block()
