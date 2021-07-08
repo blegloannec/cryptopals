@@ -10,10 +10,10 @@ rot = lambda n,r: (n>>(32-r)) | ((n<<r)&msk32)  # int32 left rotate
 
 def pad(M: bytearray):
     ml = 8*len(M)
-    M.append(1<<7)
+    M.append(1<<7)  # \x80
     k = (-ml-8-64) % 512
-    M.extend(0 for _ in range(k//8))
-    M.extend(ml.to_bytes(8, 'big'))
+    M += bytes(k//8)
+    M += ml.to_bytes(8, 'big')
 
 def sha1(M: bytes, H0=None, do_pad=True) -> bytes:
     # Initialize variables

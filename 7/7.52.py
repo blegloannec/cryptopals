@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
-from Crypto.Random import get_random_bytes
+from Cryptodome.Cipher import AES
+from Cryptodome.Random import get_random_bytes
 import itertools
 
 BS = 16
+
+def md_pad(M: bytes) -> bytes:  # MD padding (see 4.28-30)
+    ml = len(M)
+    k = (-ml-1-8) % BS
+    return M + b'\x80' + bytes(k) + (8*ml).to_bytes(8, 'big')
 
 
 ## ===== Simple MD ===== ##
@@ -16,7 +20,7 @@ def compression(H: bytes, B: bytes) -> bytes:
     return AES.new(H+bytes(BS-HS), AES.MODE_ECB).encrypt(B)[:HS]
 
 def merkle_damgard(H: bytes, M: bytes) -> bytes:
-    M = pad(M, BS)  # not the usual MD padding, but whatever...
+    M = md_pad(M)
     for i in range(0, len(M), BS):
         H = compression(H, M[i:i+BS])
     return H
@@ -33,7 +37,7 @@ def random_collision(H0: bytes):
 
 def gen_2n_collisions(H: bytes, n: int):
     # generates 2ⁿ collisions for merkle_damgard(H, .)
-    # given as a list of length n of couples of blocks
+    # provided as a list of length n of couples of blocks
     MM = []
     for _ in range(n):
         MM.append(random_collision(H))
