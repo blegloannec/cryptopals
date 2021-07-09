@@ -36,13 +36,13 @@ def random_collision(H01: bytes, H02: bytes):
         H1 = compression(H01, B)
         if H1 in Pred:
             if Pred[H1][1] is not None:
-                return (B, Pred[H1][1])
+                return (B, Pred[H1][1], H1)
         else:
             Pred[H1] = (B, None)
         H2 = compression(H02, B)
         if H2 in Pred:
             if Pred[H2][0] is not None:
-                return (Pred[H2][0], B)
+                return (Pred[H2][0], B, H2)
         else:
             Pred[H2] = (None, B)
 
@@ -56,9 +56,8 @@ class ExpandableMsg:
         for n in range(self.k):
             M = get_random_bytes(BS<<n)
             H2 = _md(H, M)
-            A,B = random_collision(H, H2)
+            A,B,H = random_collision(H, H2)
             self.EM.append((A, M+B))
-            H = compression(H, A)
         self.Hf = H
 
     def expand_to(self, l: int) -> bytes:
