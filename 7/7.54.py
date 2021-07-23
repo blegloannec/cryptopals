@@ -49,7 +49,7 @@ def random_collision(H01: bytes, H02: bytes):
 
 class StatesTree:
     def __init__(self, k: int):
-        # O(2^(k+1) * 2^(8*HS/2))
+        # O(2^k * 2^(8*HS/2))
         self.k = k
         self.N = 1<<self.k
         self.States = [None]*self.N + [get_random_bytes(HS) for _ in range(self.N)]
@@ -73,8 +73,13 @@ class StatesTree:
 
 
 if __name__=='__main__':
+    # Let b = 8*HS the bit length of the hash
+    # Tradeoff:     Pre-comp.   vs   Attack
+    #               2^(k+b/2)        2^(b-k)
+    # e.g. k=b/4    2^(3b/4)         2^(3b/4)
+
     H0 = get_random_bytes(HS)
-    k = 2*HS
+    k = 2*HS  # = 8*HS/4
     target_size = 20*BS
     print(f'hash size = {HS} bytes, k = {k}')
 
@@ -87,7 +92,7 @@ if __name__=='__main__':
     prediction = _md(HF.root(), pad_suff)
     print(f'Prediction: {prediction.hex()}')
 
-    arbitrary_msg = get_random_bytes(target_size - (k+1)*BS)  # whatever we want
+    arbitrary_msg = get_random_bytes(target_size - (k+1)*BS)  # <= whatever we want
     H1 = _md(H0, arbitrary_msg)
     print('Randomly looking for a bridge...', end=' ', flush=True)
     # proba:       2^k/2^(8*HS)

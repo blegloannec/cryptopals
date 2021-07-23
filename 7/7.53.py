@@ -54,7 +54,7 @@ class ExpandableMsg:
         self.k = k
         self.H0 = H
         for n in range(self.k):
-            M = get_random_bytes(BS<<n)
+            M = get_random_bytes(BS<<n)  # <= whatever we want
             H2 = _md(H, M)
             A,B,H = random_collision(H, H2)
             self.EM.append((A, M+B))

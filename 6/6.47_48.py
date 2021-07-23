@@ -52,8 +52,8 @@ def oracle(x: int) -> bool:
 #   (2B+rn)/s ≤  m ≤ (3B-1+rn)/s
 # and we could then refine
 #   max(a, (2B+rn)/s) ≤ m ≤ min(b, (3B-1+rn)/s)
-# This analysis enlighten the design of steps 2a, 2b & 3.
-# Step 2c intend to accelerate the search by splitting
+# This analysis enlightens the design of steps 2a, 2b & 3.
+# Step 2c intends to accelerate the search by splitting
 # the interval roughly in half...
 
 def merge_intervals(I):
@@ -86,7 +86,7 @@ def attack(c : bytes):
     
     # Step 2.a
     print('Step  2a.....', end=' ', flush=True)
-    s = (n+3*B-1)//(3*B)
+    s = ceil_div(n, 3*B)
     while not oracle(c0*pow(s,e,n)):
         s += 1
     print('ok.')
