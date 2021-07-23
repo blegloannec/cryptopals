@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from Cryptodome.Util.number import getPrime
+from Cryptodome.Util.number import getPrime, inverse
 from collections import namedtuple
 
 PrivKey = namedtuple('PrivKey', ('d', 'n'))
@@ -8,15 +8,18 @@ PubKey  = namedtuple('PubKey',  ('e', 'n'))
 
 def gen_key(size=1<<10):
     e = 3  # we always want e = 3 here
-    p = getPrime(size>>1)
-    while (p-1)%e == 0:  # gcd(e, p-1) != 1
+    n = 0
+    while n.bit_length()<size:
         p = getPrime(size>>1)
-    q = getPrime(size>>1)
-    while (q-1)%e == 0:  # gcd(e, q-1) != 1
+        while (p-1)%e == 0:  # gcd(e, p-1) != 1
+            p = getPrime(size>>1)
         q = getPrime(size>>1)
-    n = p*q
+        while (q-1)%e == 0:  # gcd(e, q-1) != 1
+            q = getPrime(size>>1)
+        n = p*q
     phi = (p-1)*(q-1)
-    d = pow(e, -1, phi)
+    #d = pow(e, -1, phi)
+    d = inverse(e, phi)
     K = PubKey(e, n)
     k = PrivKey(d, n)
     return (k, K)
