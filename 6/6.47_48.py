@@ -8,7 +8,11 @@ from Cryptodome.Util.number import inverse, ceil_div
 #                inverse  = lambda x,n: pow(x, -1, n)
 
 
-## Padding & oracle
+# NB: For convenience, in the following, MAIN's k, _k & K are
+#     global (and btw they're not confusing names at all...)
+
+
+## === Padding & oracle === ##
 def pad(D: bytes, k: int) -> bytes:
     assert len(D) <= k-11
     P = bytes(random.randint(1, 255) for _ in range(k-3-len(D)))
@@ -19,7 +23,8 @@ def is_PKSC1_conform(EB: bytes) -> bool:
         and all(EB[i]!=0x00 for i in range(2, 10)) \
         and any(EB[i]==0x00 for i in range(10, len(EB)))
 
-# faster check to focus on what actually matters here
+# faster check (as suggested in the statement)
+# to focus on what actually matters here
 def fast_is_PKSC1_conform(EB: bytes) -> bool:
     return EB[0]==0x00 and EB[1]==0x02
 
@@ -33,6 +38,7 @@ def oracle(x: int) -> bool:
     return fast_is_PKSC1_conform(mess)
 
 
+## === Attack === ##
 # Let B = 2^(8(k-2)), the oracle tells us
 #   2B ≤ decrypt(x) < 3B  [mod n]
 # Assume we have c = encrypt(m), then for any s,
@@ -53,8 +59,25 @@ def oracle(x: int) -> bool:
 # and we could then refine
 #   max(a, (2B+rn)/s) ≤ m ≤ min(b, (3B-1+rn)/s)
 # This analysis enlightens the design of steps 2a, 2b & 3.
+
 # Step 2c intends to accelerate the search by splitting
 # the interval roughly in half...
+# Having found an s, the width of the new interval for
+# m is B/s. To divide it by 2, we want the next s' ≥ 2s.
+# We would have
+#   2B+r'n ≤ s'm < 3B+r'n
+# hence
+#   (2B+r'n)/b ≤ (2B+r'n)/m ≤ s' < (3B+r'n)/m ≤ (3B+r'n)/a
+# hence a sufficient condition would be
+#   2s ≤ (2B+r'n)/b ≤ s'
+# i.e.
+#   r' ≥ (2bs-2B)/n = 2(bs-B)/n
+# /!\ However, the article suggests r' ≥ 2(bs-2B)/n
+# (which is a smaller value) without giving the details of
+# the calculations... Moreover, this value is not important for
+# the attack analysis as long as it divides the interval in half.
+# This might simply be a *typo* as suggested here:
+# https://crypto.stackexchange.com/questions/42456/bleichenbacher-attack-binary-search-formula-for-s-i
 
 def merge_intervals(I):
     I.sort()
@@ -101,7 +124,8 @@ def attack(c : bytes):
         else:
             # Step 2.c
             a,b = M[0]
-            r = ceil_div(2*(b*s-2*B), n)
+            r = ceil_div(2*(b*s-2*B), n)  # as in the article,
+            #r = ceil_div(2*(b*s-B), n)   # or corrected typo?
             s = ceil_div(2*B+r*n, b)
             while not oracle(c0*pow(s,e,n)):
                 s += 1
@@ -127,6 +151,7 @@ def attack(c : bytes):
         i += 1
 
 
+## === MAIN === ##
 if __name__=='__main__':
     # Sanity check
     print('Sanity check...', end=' ', flush=True)
