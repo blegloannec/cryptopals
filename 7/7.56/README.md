@@ -4,7 +4,7 @@
 
 We implement this one in C++ for performance.
 
-We attack bits 16 and 32 using 2²³ iterations (which is good enough as checked below).
+We attack bytes 16 and 32 using 2²³ iterations (which is good enough as checked below).
 
 ### Biases check on bytes 16 and 32
 
@@ -24,9 +24,18 @@ $ time ./attack
                |               |
                U               R
 ./attack  14,04s user 0,00s system 99% cpu 14,067 total
+```
+```
 $ time ./attack 
 ###BE_SURE_TO_DRINK_YOUR_OVALTINE
                |               |
                R               N
 ./attack  13,76s user 0,00s system 99% cpu 13,766 total
+```
+```
+$ time ./attack                 
+####BE_SURE_TO_DRINK_YOUR_OVALTINE
+               |               |
+               D               I
+./attack  13,55s user 0,00s system 99% cpu 13,560 total
 ```

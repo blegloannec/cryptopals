@@ -7,6 +7,8 @@ using namespace std;
 typedef vector<uint8_t> bytes;
 
 const int N = 1<<23;  // iterations
+const string _msg = "BE_SURE_TO_DRINK_YOUR_OVALTINE";
+const bytes _cookie(_msg.begin(), _msg.end());
 
 random_device RNG;    // /dev/urandom
 
@@ -38,7 +40,7 @@ struct RC4 {
     uint8_t k = S[i]+S[j];
     return S[k];
   }
-
+  
   // associated stream (en/de)cryption
   bytes encrypt(const bytes &msg) {
     bytes ciph;
@@ -48,7 +50,6 @@ struct RC4 {
 };
 
 
-bytes _cookie;
 bytes oracle(const bytes &prefix) {
   bytes data = prefix;
   data.insert(data.end(), _cookie.begin(), _cookie.end());
@@ -74,16 +75,12 @@ int main() {
 }
 #else
 int main() {
-  string _msg = "BE_SURE_TO_DRINK_YOUR_OVALTINE";
-  for (char c: _msg) _cookie.push_back((uint8_t)c);
-
   assert(_msg.size()<=32);
   int a = RNG()%16;  // targeted position in '#'*(32-_msg.size()) + _msg
   bytes prefix(32-_msg.size() + 15-a, '#');  // fill prefix with '#'
   for (auto c : prefix) cout << c;
   cout << _msg << endl;
   cout << "               |               |" << endl;
-  
   vector<int> C16(256,0), C32(256,0);
   for (int i=0; i<N; ++i) {
     bytes ciph = oracle(prefix);
