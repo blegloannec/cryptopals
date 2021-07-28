@@ -15,6 +15,7 @@
 * 3.21-24: [Mersenne Twister (pseudocode)](https://en.wikipedia.org/wiki/Mersenne_Twister)
   * Makoto Matsumoto's [MT page](http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/emt.html)
 * 4.28-29: [SHA-1 (pseudocode)](https://en.wikipedia.org/wiki/SHA-1)
+  * 4.29: [Duong–Rizzo Flickr attack](http://netifera.com/research/flickr_api_signature_forgery.pdf)
 * 4.30: [MD4](https://en.wikipedia.org/wiki/MD4)
   * RFC [1186](https://datatracker.ietf.org/doc/html/rfc1186), [1320](https://datatracker.ietf.org/doc/html/rfc1320), [6150](https://datatracker.ietf.org/doc/html/rfc6150)
 * 4.31-32: [HMAC](https://en.wikipedia.org/wiki/HMAC)
@@ -36,7 +37,7 @@
 * 7.49-50: [CBC-MAC](https://en.wikipedia.org/wiki/CBC-MAC)
   * 7.50: Matthew Green's [blog post](https://blog.cryptographyengineering.com/2013/02/15/why-i-hate-cbc-mac/)
 * 7.51:
-  * [CRIME attack](https://docs.google.com/presentation/d/11eBmGiHbYcHR9gL5nDyZChu_-lCa2GizeuOfaLU2HOU)
+  * [Duong–Rizzo CRIME attack](http://netifera.com/research/crime/CRIME_ekoparty2012.pdf)
 * 7.52: [Merkle–Damgård](https://en.wikipedia.org/wiki/Merkle%E2%80%93Damg%C3%A5rd_construction)
   * Joux, [_Multicollisions in iterated hash functions_](https://www.iacr.org/archive/crypto2004/31520306/multicollisions.pdf), 2004
 * 7.53:
