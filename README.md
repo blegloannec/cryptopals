@@ -46,6 +46,7 @@
   * Kelsey–Kohno, [_Herding Hash Functions and the Nostradamus Attack_](https://homes.cs.washington.edu/~yoshi/papers/EC06/herding.pdf), 2006
 * 7.55:
   * Wang _et al._, [_Cryptanalysis of the Hash Functions MD4 and RIPEMD_](https://www.iacr.org/archive/eurocrypt2005/34940001/34940001.pdf), 2005
+  * Improved by: Sasaki _et al._, [_New Message Difference for MD4_](https://www.iacr.org/archive/fse2007/45930331/45930331.pdf), 2007
 * 7.56: [RC4](https://en.wikipedia.org/wiki/RC4)
   * [On the Security of RC4 in TLS and WPA](http://www.isg.rhul.ac.uk/tls/): [paper](http://www.isg.rhul.ac.uk/tls/RC4biases.pdf), [biases](http://www.isg.rhul.ac.uk/tls/biases.pdf)
   * See also: Fluhrer–Mantin–Shamir, [_Weaknesses in the Key Scheduling Algorithm of RC4_](https://link.springer.com/content/pdf/10.1007%2F3-540-45537-X_1.pdf), 2001
