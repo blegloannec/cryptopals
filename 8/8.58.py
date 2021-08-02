@@ -1,13 +1,11 @@
 #!/usr/bin/env pypy3
 
 import secrets
-from arith import small_factors, CRT_combine
+from arith import small_factors, CRT_combine, invmodp
 
 
 # Params
 p = 11470374874925275658116663507232161402086650258453896274534991676898999262641581519101074740642369848233294239851519212341844337347119899874391456329785623
-inv_mod = lambda n: pow(n, p-2, p)
-
 g = 622952335333961296978159266084741085889881358738459939978290179936063635566740258555167783009058567397963466103140082647486611657350811560630587013183357
 q = 335062023296420808191071248367701059461  # order of g
 assert pow(g,q,p) == 1
@@ -105,7 +103,7 @@ if __name__=='__main__':
     # Rewrite the problem:
     #   B = g^(X + K*R)
     #   B*g^(-X) = (g^R)^K
-    Bp = (B * inv_mod(pow(g,X,p))) % p
+    Bp = (B * invmodp(pow(g,X,p),p)) % p
     gp = pow(g,R,p)
 
     # New DL problem:
