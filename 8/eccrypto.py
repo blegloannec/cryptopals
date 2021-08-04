@@ -2,13 +2,15 @@
 
 from copy import copy
 import secrets
-from arith import invmodp, shanks_tonelli
+from arith import invmodp, legendre, shanks_tonelli
 
+
+## === Weierstrass y² = x³ + ax + b === ##
 
 # Curve params
-P = 3
-_a = 0
-_b = 1
+P = None
+_a = None
+_b = None
 
 def set_params(a=None, b=None, p=None):
     global P,_a,_b
@@ -21,9 +23,13 @@ class Point:
     def __init__(self, x=0, y=0):
         self.x = x%P
         self.y = y%P
+        # we should always check that the point is on the curve
+        # but we do not do it here to allow some of the attacks
+        #assert self.is_valid()
 
     def is_valid(self):
-        return (self.y*self.y - pow(self.x,3,P) - _a*self.x - _b)%P==0
+        return self.is_zero() or \
+            (self.y*self.y - pow(self.x,3,P) - _a*self.x - _b)%P==0
 
     def is_zero(self):
         return isinstance(self, Zero)
@@ -86,3 +92,57 @@ def random_point(a=None, b=None):
         y = shanks_tonelli(y2, P)
         if y is not None:
             return Point(x,y)
+
+
+## === Montgomery Bv² = u³ + Au² + u === ##
+
+# The idea behind this section is to introduce an isomorphic
+# representation of elliptic curves in which the scaling
+# operation can be computed more efficiently by a single-coord.
+# approach called "ladder".
+# The ladder approach identifies (u,±v), as well as (0,0) (actual
+# point on the Montgomery curve) and 0 the neutral/identity
+# at infinity.
+
+# we use the same P
+_A = None
+_B = None
+
+def set_montgomery_params(A=None, B=None, p=None):
+    global P,_A,_B
+    if A is not None: _A = A
+    if B is not None: _B = B
+    if p is not None: P = p
+
+def montgomery_is_valid(u, v=None):
+    if v is None:  # single-coordinate check
+        v2 = (invmodp(_B,P)*(pow(u,3,P) + _A*u*u + u))%P
+        return legendre(v2,P)==1
+    # point check
+    return (_B*v*v - pow(u,3,P) - _A*u*u - u)%P==0
+
+def montgomery_v_from_u(u):
+    # output is None if no solution
+    # if output is v, -v is also solution
+    Bv2 = (pow(u,3,P) + _A*u*u + u) % P
+    v2 = (Bv2 * invmodp(_B,P)) % P
+    return shanks_tonelli(v2, P)
+
+def montgomery_ladder(u: int, k: int) -> int:
+    # we should check that the coordinate u is on the curve
+    # (otherwise it would be on the twist)
+    # but we do not do it here to allow some of the attacks
+    #assert montgomery_is_valid(u)
+    u2,w2 = 1,0
+    u3,w3 = u,1
+    for i in range(P.bit_length()-1,-1,-1):
+        b = 1 & (k >> i)
+        if b:
+            u2,u3 = u3,u2
+            w2,w3 = w3,w2
+        u3,w3 = pow(u2*u3-w2*w3,2,P), (u*pow(u2*w3-w2*u3,2,P))%P
+        u2,w2 = pow(u2*u2-w2*w2,2,P), (4*u2*w2*(u2*u2+_A*u2*w2+w2*w2))%P
+        if b:
+            u2,u3 = u3,u2
+            w2,w3 = w3,w2
+    return (u2*invmodp(w2,P))%P
