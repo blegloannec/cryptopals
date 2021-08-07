@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import secrets, hmac
+import secrets, hashlib
 from arith import small_factors, CRT_combine
+
 
 ##  === Helpers === ##
 randint = lambda a,b: a+secrets.randbelow(b-a+1)
@@ -23,7 +24,7 @@ assert pow(g,q,p) == 1
 # private keys can be considered mod q
 
 def MAC(k: int, m: bytes) -> bytes:
-    return hmac.new(int_to_bytes(k), msg=m, digestmod='blake2b').digest()
+    return hashlib.blake2b(m, key=int_to_bytes(k)).digest()
 
 
 ## === MAIN == ##

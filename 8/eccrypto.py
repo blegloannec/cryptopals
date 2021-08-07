@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from copy import copy
-import secrets
+import secrets, hashlib
 from arith import invmodp, legendre, shanks_tonelli
 
 
@@ -92,6 +92,35 @@ def random_point(a=None, b=None):
         y = shanks_tonelli(y2, P)
         if y is not None:
             return Point(x,y)
+
+
+## === ECDSA === ##
+
+_G  = None
+_Go = None  # *prime* order of G
+
+def set_base_point(G: Point, order: int):
+    global _G,_Go
+    _G  = G
+    _Go = order
+
+def H(msg: bytes) -> int:
+    # BLAKE2b with 256-bit output
+    return int.from_bytes(hashlib.blake2b(msg, digest_size=32).digest(), 'big')
+
+def dsa_sign(msg, priv):
+    k = 1+secrets.randbelow(_Go-1)
+    r = (k*_G).x % _Go
+    s = ((H(msg) + priv*r) * invmodp(k,_Go)) % _Go
+    return (r, s)
+
+def dsa_verify(msg, sig, Pub):
+    r,s = sig
+    sinv = invmodp(s,_Go)
+    u1 = (H(msg) * sinv) % _Go
+    u2 = (r * sinv) % _Go
+    R = u1*_G + u2*Pub
+    return r == R.x % _Go
 
 
 ## === Montgomery Bv² = u³ + Au² + u === ##
