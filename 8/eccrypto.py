@@ -8,9 +8,9 @@ from arith import invmodp, legendre, shanks_tonelli
 ## === Weierstrass y² = x³ + ax + b === ##
 
 # Curve params
-P = None
-_a = None
-_b = None
+P = 233970423115425145524320034830162017933
+_a = P-95051
+_b = 11279326
 
 def set_params(a=None, b=None, p=None):
     global P,_a,_b
@@ -96,8 +96,8 @@ def random_point(a=None, b=None):
 
 ## === ECDSA === ##
 
-_G  = None
-_Go = None  # *prime* order of G
+_G  = Point(182, 85518893674295321206118380980485522083)
+_Go = 29246302889428143187362802287225875743  # *prime* order of G
 
 def set_base_point(G: Point, order: int):
     global _G,_Go
@@ -134,8 +134,8 @@ def dsa_verify(msg, sig, Pub):
 # at infinity.
 
 # we use the same P
-_A = None
-_B = None
+_A = 534
+_B = 1
 
 def set_montgomery_params(A=None, B=None, p=None):
     global P,_A,_B
