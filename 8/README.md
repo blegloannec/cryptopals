@@ -10,3 +10,5 @@
   * [Explicit-Formulas Database](https://hyperelliptic.org/EFD/index.html)
 * 8.62: [LLL](https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm)
   * Howgrave-Graham & Smart, [_Lattice Attacks on Digital Signature Schemes_](https://www.hpl.hp.com/techreports/1999/HPL-1999-90.pdf), pub. 2001 (rep.1999)
+* 8.63:
+  * [GCM NIST specification](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
