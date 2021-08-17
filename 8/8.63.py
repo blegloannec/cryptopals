@@ -8,6 +8,7 @@ from poly2 import *
 BS = 16
 
 def rev_int8(x):
+    # for bit-level little-endianness
     r = 0
     for i in range(8):
         if (x>>i)&1:
@@ -53,7 +54,7 @@ def _aes_gcm_mac(key, nonce, ciph, data):
     s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     mac = poly_to_bytes(g^s)
     return mac
-    
+
 def AES_GCM_encrypt(key, nonce, msg, data=b''):
     assert len(key)   == BS
     assert len(nonce) == 12  # 96 bits

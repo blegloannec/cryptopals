@@ -62,7 +62,7 @@ def LLL(B, delta=Decimal(0.99)):
     return B
 
 
-def sanity_check():
+def _sanity_check():
     B = [Vec([ -2,    0,    2,    0]),
          Vec([1/2,   -1,    0,    0]),
          Vec([ -1,    0,   -2,  1/2]),
@@ -72,4 +72,4 @@ def sanity_check():
         print(vec_str(b))
 
 if __name__=='__main__':
-    sanity_check()
+    _sanity_check()
