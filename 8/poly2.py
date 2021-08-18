@@ -133,7 +133,7 @@ class Poly2k:
         return len(self.C)-1
 
     def reduce(self):
-        while self.C and self.C[-1]==0:
+        while self.C and self.C[-1] == 0:
             self.C.pop()
 
     def __getitem__(self, i):
@@ -162,7 +162,7 @@ class Poly2k:
     def __lshift__(self, d):
         return Poly2k([0]*d + self.C)
 
-    def __rmul__(self, p):
+    def __rmul__(self, p):  # scalar mul.
         assert isinstance(p, int)  # p in GF(2^k)
         return Poly2k([pmodmul(p, c) for c in self.C])
 
@@ -189,32 +189,103 @@ class Poly2k:
         return R
 
     def gcd(self, Q):
-        if Q.deg() < 0:
-            return copy(self)
+        if Q == 0:
+            return self.to_monic()
         return Q.gcd(self % Q)
 
     def __str__(self):
         return str(self.C)
 
+    __repr__ = __str__
+
     def __eq__(self, B):
+        if isinstance(B, int):
+            if B == 0:
+                return self.deg() < 0
+            else:
+                return self.deg() == 0 and self.C[0] == B
         return self.C == B.C
+
+    def __pow__(self, n):
+        assert n >= 0
+        if n == 0:
+            return Poly2k([1])
+        elif n&1 == 0:
+            return (self*self)**(n>>1)
+        return self * (self*self)**(n>>1)
+
+    def to_monic(self):
+        assert self.deg() >= 0
+        return pmodinv(self.C[-1])*self
+
+    def diff(self):  # derivation (for q = 2^k, p = 2 => fallen exponents mod p)
+        return Poly2k([self.C[i] if i&1!=0 else 0 for i in range(1, len(self.C))])
+
+    def sqrt(self):
+        # through Frobenius morphism x -> x^p for p = 2
+        # (∑ ai X^i)^p = ∑ ai^p X^(i*p)
+        # in GF(p^k), we have x^(p^k) = x
+        #             (x^p)^(p^(k-1)) = x
+        # hence the inverse of Frobenius is x -> x^(p^(k-1))
+        assert all(c == 0 for c in self.C[1::2])
+        return Poly2k([pmodexp(c, 1<<(_K-1)) for c in self.C[::2]])
 
 
 def rand_poly2k(d, k=_K):
     return Poly2k([random.randint(0, 1<<k) for _ in range(d+1)])
 
 
+def square_free_factorization(P, b=1):
+    # Input:  A monic polynomial P in Fq[x] where q = 2^m
+    # Output: Square-free factorization of P
+    F = []
+
+    # Make W be the product (without multiplicity) of all
+    # factors of P that have multiplicity not divisible by p = 2
+    C = P.gcd(P.diff())
+    W = P//C
+
+    # Step 1: Identify all factors in W
+    i = 1
+    while W != 1:
+        Y = W.gcd(C)
+        Z = W//Y
+        if Z != 1:
+            F.append((Z, b*i))
+        W = Y
+        C //= Y
+        i += 1
+    # C is now the product (with multiplicity)
+    # of the remaining factors of P
+
+    # Step 2: Identify all remaining factors using recursion
+    # (factors of P that have multiplicity divisible by p = 2)
+    if C != 1:
+        F += square_free_factorization(C.sqrt(), 2*b)
+    return F
+
+
 # Sanity check
 def _sanity_check_3(it=20): 
     for _ in range(it):
-        A = rand_poly2k(15)
-        B = rand_poly2k(10)
+        A = rand_poly2k(random.randint(1, 10))
+        B = rand_poly2k(random.randint(1, 5))
+
         C = A*B
         Q,R = C.divmod(B)
         assert Q == A and R.deg() < 0
 
         Q,R = A.divmod(B)
         assert R.deg() < B.deg() and Q*B+R == A
+
+        C = A*A * B*B * B
+        C = C.to_monic()
+        F = square_free_factorization(C)
+
+        D = Poly2k([1])
+        for R,a in F:
+            D *= R**a
+        assert D == C
 
 
 ## === MAIN === ##
