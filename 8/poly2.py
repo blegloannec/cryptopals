@@ -4,6 +4,10 @@ _MOD = (1<<128) | (1<<7) | (1<<2) | (1<<1) | 1
 _K = 128
 
 
+import random
+random.seed()
+
+
 ## === Polynomials in GF(2)[X] === ##
 # coeffs are represented by the bits of an int
 # add is xor (+ is ^)
@@ -125,9 +129,11 @@ class Poly2k:
     def __init__(self, C=None):
         if C is None:
             self.C = []
+        elif isinstance(C, int):
+            self.C = [C]
         else:
             self.C = [pmod(c) for c in C]
-            self.reduce()
+        self.reduce()
 
     def deg(self):
         return len(self.C)-1
@@ -207,9 +213,9 @@ class Poly2k:
         return self.C == B.C
 
     def __pow__(self, n):
-        assert n >= 0
+        #assert n >= 0
         if n == 0:
-            return Poly2k([1])
+            return Poly2k(1)
         elif n&1 == 0:
             return (self*self)**(n>>1)
         return self * (self*self)**(n>>1)
@@ -230,6 +236,35 @@ class Poly2k:
         assert all(c == 0 for c in self.C[1::2])
         return Poly2k([pmodexp(c, 1<<(_K-1)) for c in self.C[::2]])
 
+    def modexp(self, n, MOD):
+        #assert n >= 0
+        if n == 0:
+            return Poly2k(1)
+        elif n&1 == 0:
+            return ((self*self)%MOD).modexp(n>>1, MOD)
+        return (self * ((self*self)%MOD).modexp(n>>1, MOD)) % MOD
+
+    def factorization(self):
+        P = self.to_monic()
+        for Q,m in square_free_factorization(P):
+            for R,d in distinct_degree_factorization(Q):
+                for u in equal_degree_factorization(R,d):
+                    yield (u, m)
+
+    def roots(self):
+        P = self.to_monic()
+        for Q,_ in square_free_factorization(P):
+            for R,d in distinct_degree_factorization(Q):
+                if d==1:
+                    for u in equal_degree_factorization(R,d):
+                        yield u[0]
+
+    def __call__(self, x):
+        y = 0
+        for c in reversed(self.C):
+            y = pmodmul(y, x) ^ c
+        return y
+
 
 def rand_poly2k(d, k=_K):
     return Poly2k([random.randint(0, 1<<k) for _ in range(d+1)])
@@ -245,7 +280,7 @@ def square_free_factorization(P, b=1):
     C = P.gcd(P.diff())
     W = P//C
 
-    # Step 1: Identify all factors in W
+    # Identify all factors in W
     i = 1
     while W != 1:
         Y = W.gcd(C)
@@ -258,40 +293,77 @@ def square_free_factorization(P, b=1):
     # C is now the product (with multiplicity)
     # of the remaining factors of P
 
-    # Step 2: Identify all remaining factors using recursion
+    # Identify all remaining factors using recursion
     # (factors of P that have multiplicity divisible by p = 2)
     if C != 1:
         F += square_free_factorization(C.sqrt(), 2*b)
     return F
 
 
+def distinct_degree_factorization(P):
+    X = Poly2k([0,1])
+    q = 1<<_K
+    Xqi = X
+    S = []
+    i = 1
+    F = P
+    while F.deg() >= 2*i:
+        Xqi = Xqi.modexp(q, F)  # good enough way to X^(q^i) mod F
+        G = F.gcd(Xqi - X)
+        if G != 1:
+            S.append((G, i))
+            F //= G
+        i += 1
+    if F != 1:
+        S.append((F, F.deg()))
+    if not S:
+        S.append((P, 1))
+    return S
+
+
+def equal_degree_factorization(f, d):  # Cantor-Zassenhaus
+    n = f.deg()
+    r = n//d
+    q = 1<<_K
+    e = (q**d-1)//3
+
+    S = [f]
+    while len(S) < r:
+        h = rand_poly2k(f.deg()-1)
+        g = h.gcd(f)
+
+        if g == 1:
+            g = (h.modexp(e, f) - Poly2k(1)) % f
+
+        T = []
+        for u in S:
+            if u.deg() > d:
+                v = g.gcd(u)
+                if v != 1 and v != u:
+                    T.append(v)
+                    T.append(u//v)
+                    continue
+            T.append(u)
+        S = T
+    return S
+
+
 # Sanity check
-def _sanity_check_3(it=20): 
+def _sanity_check_3(it=1): 
     for _ in range(it):
-        A = rand_poly2k(random.randint(1, 10))
-        B = rand_poly2k(random.randint(1, 5))
-
-        C = A*B
-        Q,R = C.divmod(B)
-        assert Q == A and R.deg() < 0
-
-        Q,R = A.divmod(B)
-        assert R.deg() < B.deg() and Q*B+R == A
-
-        C = A*A * B*B * B
+        C = Poly2k(1)
+        for _ in range(5):
+            C *= rand_poly2k(random.randint(1, 5))
         C = C.to_monic()
-        F = square_free_factorization(C)
 
         D = Poly2k([1])
-        for R,a in F:
+        for R,a in C.factorization():
             D *= R**a
         assert D == C
 
 
 ## === MAIN === ##
 if __name__=='__main__':
-    import random
-    random.seed()
-    _sanity_check_1()
-    _sanity_check_2()
+    #_sanity_check_1()
+    #_sanity_check_2()
     _sanity_check_3()

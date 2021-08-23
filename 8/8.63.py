@@ -4,6 +4,7 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Util.strxor import strxor
 from Cryptodome.Random import get_random_bytes
 from poly2 import *
+import secrets
 
 BS = 16
 
@@ -72,9 +73,8 @@ def AES_GCM_decrypt(key, nonce, ciph_mac, data=b''):
     return msg
 
 
-def main():
-    import secrets
-    for _ in range(10):
+def sanity_check(it=10):
+    for _ in range(it):
         key   = get_random_bytes(BS)
         nonce = get_random_bytes(12)
         msg   = get_random_bytes(secrets.randbelow(1<<9))
@@ -87,5 +87,44 @@ def main():
         msg1 = AES_GCM_decrypt(key, nonce, ciph_mac, data)
         assert msg1 == msg
 
+
+def gen_poly(ciph, data, mac):
+    data_pad = b'\x00'*((-len(data))%BS)
+    ciph_pad = b'\x00'*((-len(ciph))%BS)
+    data_siz = (8*len(data)).to_bytes(8, 'big')
+    ciph_siz = (8*len(ciph)).to_bytes(8, 'big')
+    mash = data + data_pad + ciph + ciph_pad + data_siz + ciph_siz
+    C = [bytes_to_poly(mac)]
+    for i in reversed(range(0, len(mash), BS)):
+        b = bytes_to_poly(mash[i:i+BS])
+        C.append(b)
+    return Poly2k(C)
+
+def attack():
+    key   = get_random_bytes(BS)
+    nonce = get_random_bytes(12)  # repeated!
+    msg1  = get_random_bytes(secrets.randbelow(1<<7))
+    data1 = get_random_bytes(secrets.randbelow(1<<7))
+    msg2  = get_random_bytes(secrets.randbelow(1<<7))
+    data2 = get_random_bytes(secrets.randbelow(1<<7))
+
+    # captured
+    ciph1, mac1 = AES_GCM_encrypt(key, nonce, msg1, data1)
+    ciph2, mac2 = AES_GCM_encrypt(key, nonce, msg2, data2)
+
+    # secrets to guess
+    _h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
+    _s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
+    print('Secret:   ', hex(_h), hex(_s))
+
+    # attack
+    f1 = gen_poly(ciph1, data1, mac1)
+    f2 = gen_poly(ciph2, data2, mac2)
+    f = f1+f2
+    for h in f.roots():
+        s = f1(h)
+        print('Candidate:', hex(h), hex(s))
+
 if __name__=='__main__':
-    main()
+    sanity_check()
+    attack()
