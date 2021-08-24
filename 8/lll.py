@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# for arbitrary precision, we use decimals instead of fractions
+# as it is much faster
 from decimal import Decimal, getcontext
 getcontext().prec = 80
 

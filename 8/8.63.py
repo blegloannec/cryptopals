@@ -47,11 +47,12 @@ def _aes_gcm_mac(key, nonce, ciph, data):
     ciph_siz = (8*len(ciph)).to_bytes(8, 'big')
     mash = data + data_pad + ciph + ciph_pad + data_siz + ciph_siz
     h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
+    # Horner's computation of ∑ mashᵢ hⁱ⁺¹ where h only depends on the key
     g = 0
     for i in range(0, len(mash), BS):
         b = bytes_to_poly(mash[i:i+BS])
         g = pmodmul(g^b, h)
-    # finalize
+    # finalize mac = ∑ mashᵢ hⁱ⁺¹ + s where s only depends on the key & nonce
     s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     mac = poly_to_bytes(g^s)
     return mac
@@ -94,6 +95,9 @@ def gen_poly(ciph, data, mac):
     data_siz = (8*len(data)).to_bytes(8, 'big')
     ciph_siz = (8*len(ciph)).to_bytes(8, 'big')
     mash = data + data_pad + ciph + ciph_pad + data_siz + ciph_siz
+    # we had mac = ∑ mashᵢ hⁱ⁺¹ + s
+    #          s = ∑ mashᵢ hⁱ⁺¹ + mac
+    #            = f(h) for f = ∑ mashᵢ Xⁱ⁺¹ + mac
     C = [bytes_to_poly(mac)]
     for i in reversed(range(0, len(mash), BS)):
         b = bytes_to_poly(mash[i:i+BS])
@@ -112,18 +116,22 @@ def attack():
     ciph1, mac1 = AES_GCM_encrypt(key, nonce, msg1, data1)
     ciph2, mac2 = AES_GCM_encrypt(key, nonce, msg2, data2)
 
-    # secrets to guess
+    # secrets to guess (same nonce => same s)
     _h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
     _s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     print('Secret:   ', hex(_h), hex(_s))
+    found = False
 
     # attack
-    f1 = gen_poly(ciph1, data1, mac1)
-    f2 = gen_poly(ciph2, data2, mac2)
-    f = f1+f2
+    f1 = gen_poly(ciph1, data1, mac1)  # s = f1(h)
+    f2 = gen_poly(ciph2, data2, mac2)  # s = f2(h)
+    f = f1+f2                          # 0 = (f1+f2)(h)
     for h in f.roots():
         s = f1(h)
         print('Candidate:', hex(h), hex(s))
+        if h == _h:
+            found = True
+    assert found
 
 if __name__=='__main__':
     sanity_check()
