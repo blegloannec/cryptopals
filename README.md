@@ -7,7 +7,7 @@
 * [PyCryptodome](https://www.pycryptodome.org/en/latest/src/api.html)
 * [IACR Publications DB](https://www.iacr.org/publications/access.php)
 
-## Bibliography
+## References
 
 * 2.9: [PKSC](https://en.wikipedia.org/wiki/PKCS) #7 - RFC [5652](https://tools.ietf.org/html/rfc5652)
 * 3.17: [CBC padding oracle](https://en.wikipedia.org/wiki/Padding_oracle_attack)
@@ -15,7 +15,7 @@
 * 3.21-24: [Mersenne Twister (pseudocode)](https://en.wikipedia.org/wiki/Mersenne_Twister)
   * Makoto Matsumoto's [MT page](http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/emt.html)
 * 4.28-29: [SHA-1 (pseudocode)](https://en.wikipedia.org/wiki/SHA-1)
-  * 4.29: [Duong–Rizzo Flickr attack](http://netifera.com/research/flickr_api_signature_forgery.pdf)
+  * 4.29: Duong–Rizzo, [_Flickr's API Signature Forgery Vulnerability_](http://netifera.com/research/flickr_api_signature_forgery.pdf), 2009
 * 4.30: [MD4](https://en.wikipedia.org/wiki/MD4)
   * RFC [1186](https://datatracker.ietf.org/doc/html/rfc1186), [1320](https://datatracker.ietf.org/doc/html/rfc1320), [6150](https://datatracker.ietf.org/doc/html/rfc6150)
 * 4.31-32: [HMAC](https://en.wikipedia.org/wiki/HMAC)
@@ -33,11 +33,11 @@
   * 6.45: Vaudenay, [_The Security of DSA and ECDSA_](https://www.iacr.org/archive/pkc2003/25670309/25670309.pdf), 2003
 * 6.46-48: [Bleichenbacher's attack (1998)](https://en.wikipedia.org/wiki/Adaptive_chosen-ciphertext_attack#Practical_attacks)
   * Bleichenbacher, [_Chosen Ciphertext Attacks Against Protocols Based on the RSA Encryption Standard PKCS #1_](https://link.springer.com/content/pdf/10.1007%2FBFb0055716.pdf), 1998
-  * See also: Fujisaki–Okamoto–Pointcheval–Stern, [_RSA-OAEP Is Secure under the RSA Assumption_](https://www.di.ens.fr/~pointche/Documents/Papers/2004_joc.pdf), 2004
+  * See also: Fujisaki _et al._, [_RSA-OAEP Is Secure under the RSA Assumption_](https://www.di.ens.fr/~pointche/Documents/Papers/2004_joc.pdf), 2004
 * 7.49-50: [CBC-MAC](https://en.wikipedia.org/wiki/CBC-MAC)
   * 7.50: Matthew Green's [blog post](https://blog.cryptographyengineering.com/2013/02/15/why-i-hate-cbc-mac/)
 * 7.51:
-  * [Duong–Rizzo CRIME attack](http://netifera.com/research/crime/CRIME_ekoparty2012.pdf)
+  * Duong–Rizzo, [_The CRIME attack_](http://netifera.com/research/crime/CRIME_ekoparty2012.pdf), 2012
 * 7.52: [Merkle–Damgård](https://en.wikipedia.org/wiki/Merkle%E2%80%93Damg%C3%A5rd_construction)
   * Joux, [_Multicollisions in iterated hash functions_](https://www.iacr.org/archive/crypto2004/31520306/multicollisions.pdf), 2004
 * 7.53:
