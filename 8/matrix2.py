@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import poly2
-import random
-random.seed()
-import time
 
 N = poly2._K
 
@@ -36,6 +33,9 @@ def cv_mul(M, v):
         for k in range(n):
             p ^= ((M[k]>>i) & (v>>k) & 1) << i
     return p
+
+def m_add(A, B): # works for both forms
+    return [a^b for a,b in zip(A,B)]
 
 def rcc_mul(A, B):
     return [rv_mul(A, b) for b in B]
@@ -88,4 +88,6 @@ def _sanity_check(it=150):
     print(f'row mat mul  {dt:.3f} s')
 
 if __name__=='__main__':
+    import time, random
+    random.seed()
     _sanity_check()
