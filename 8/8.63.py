@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-from Cryptodome.Cipher import AES
-from Cryptodome.Random import get_random_bytes
-from gcm import BS, bytes_to_poly, AES_GCM_encrypt
+from gcm import BS, bytes_to_poly, AES_GCM_encrypt, get_h_s
 from poly2 import *
-import secrets
+import os, secrets
 
 def gen_poly(ciph, data, mac):
     data_pad = b'\x00'*((-len(data))%BS)
@@ -22,21 +20,20 @@ def gen_poly(ciph, data, mac):
     return Poly2k(C)
 
 def attack():
-    key   = get_random_bytes(BS)
-    nonce = get_random_bytes(12)  # repeated!
-    msg1  = get_random_bytes(secrets.randbelow(1<<7))
-    data1 = get_random_bytes(secrets.randbelow(1<<7))
-    msg2  = get_random_bytes(secrets.randbelow(1<<7))
-    data2 = get_random_bytes(secrets.randbelow(1<<7))
+    _key   = os.urandom(BS)
+    _nonce = os.urandom(12)  # repeated!
+    _msg1  = os.urandom(secrets.randbelow(1<<7))
+    data1  = os.urandom(secrets.randbelow(1<<7))
+    _msg2  = os.urandom(secrets.randbelow(1<<7))
+    data2  = os.urandom(secrets.randbelow(1<<7))
 
     # captured
-    ciph1, mac1 = AES_GCM_encrypt(key, nonce, msg1, data1)
-    ciph2, mac2 = AES_GCM_encrypt(key, nonce, msg2, data2)
+    ciph1, mac1 = AES_GCM_encrypt(_key, _nonce, _msg1, data1)
+    ciph2, mac2 = AES_GCM_encrypt(_key, _nonce, _msg2, data2)
 
     # secrets to guess (same nonce => same s)
-    _h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
-    _s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
-    print('Secret:   ', hex(_h), hex(_s))
+    _h,_s = get_h_s(_key, _nonce)
+    print(f'Secret:    {_h:032x} {_s:032x}')
     found = False
 
     # attack
@@ -45,7 +42,7 @@ def attack():
     f = f1+f2                          # 0 = (f1+f2)(h)
     for h in f.roots():
         s = f1(h)
-        print('Candidate:', hex(h), hex(s))
+        print(f'Candidate: {h:032x} {s:032x}')
         if h == _h:
             found = True
     assert found

@@ -37,6 +37,12 @@ def _aes_gcm_crypt(key, nonce, msg):
     ciph = b''.join(ciph)
     return ciph
 
+def get_h_s(key, nonce):
+    # auth. "key" and "mask"
+    h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
+    s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
+    return (h,s)
+
 def _aes_gcm_mac(key, nonce, ciph, data):
     # MAC computation
     data_pad = b'\x00'*((-len(data))%BS)
@@ -44,14 +50,13 @@ def _aes_gcm_mac(key, nonce, ciph, data):
     data_siz = (8*len(data)).to_bytes(8, 'big')
     ciph_siz = (8*len(ciph)).to_bytes(8, 'big')
     mash = data + data_pad + ciph + ciph_pad + data_siz + ciph_siz
-    h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
+    h,s = get_h_s(key, nonce)
     # Horner's computation of ∑ mashᵢ hⁱ⁺¹ where h only depends on the key
     g = 0
     for i in range(0, len(mash), BS):
         b = bytes_to_poly(mash[i:i+BS])
         g = pmodmul(g^b, h)
     # finalize mac = ∑ mashᵢ hⁱ⁺¹ + s where s only depends on the key & nonce
-    s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     mac = poly_to_bytes(g^s)
     return mac
 
