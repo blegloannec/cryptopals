@@ -1,64 +1,102 @@
 #!/usr/bin/env python3
 
-## === Vectors and matrices in GF(2)^k === ##
-# vectors (v) are represented by integers
-# matrices (m) are represented by lists of cols (c) or rows (r)
-# m_swap() swaps between representations
-# since: rows repr. = columns repr. of the transpose
-# then m_swap is also the transpose operation
+from collections import namedtuple
+from copy import copy
 
-def _cnt1s(x):
+## === Vectors and matrices in GF(2)^k === ##
+# vectors  are represented by integers
+# matrices are represented by lists:
+#   of column vectors (CMatrix)
+#   or row    vectors (RMatrix)
+# swap() swaps between representations
+# since: rows repr. = columns repr. of the transpose
+# then swap is analog to the transpose operation
+# except:
+#   swap      swaps CMatrix/RMatrix but not r/c
+#   transpose swaps r/c but keeps the type
+
+RMatrix = namedtuple('RMatrix', ('r','c','M'))
+CMatrix = namedtuple('CMatrix', ('r','c','M'))
+
+def _cnt1s(x: int) -> int:
     o = 0
     while x:
         o += 1
         x &= x-1
     return o
 
-def v_dot(x,y):
+def v_dot(x: int , y: int) -> int:
     return _cnt1s(x&y)&1
 
-def rv_mul(M, v):
+def rv_mul(M: RMatrix, v: int) -> int:  # fast
+    assert isinstance(M, RMatrix)
     p = 0
-    for i,l in enumerate(M):
+    for i,l in enumerate(M.M):
         p |= v_dot(l,v)<<i
     return p
 
-def cv_mul(M, v):
-    n = len(M)
+def cv_mul(M: CMatrix, v: int) -> int:  # slow
+    assert isinstance(M, CMatrix)
     p = 0
-    for i in range(n):
-        for k in range(n):
-            p ^= ((M[k]>>i) & (v>>k) & 1) << i
+    for i in range(M.r):
+        for k in range(M.c):
+            p ^= ((M.M[k]>>i) & (v>>k) & 1) << i
     return p
 
-def m_add(A, B): # works for both forms
-    return [a^b for a,b in zip(A,B)]
+def r_add(A: RMatrix, B: RMatrix) -> RMatrix:
+    assert isinstance(A, RMatrix) and isinstance(B, RMatrix)
+    assert A.r == B.r and A.c == B.c
+    return RMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
 
-def rcc_mul(A, B):
-    return [rv_mul(A, b) for b in B]
+def c_add(A: CMatrix, B: CMatrix) -> CMatrix:  # actually the same
+    assert isinstance(A, CMatrix) and isinstance(B, CMatrix)
+    assert A.r == B.r and A.c == B.c
+    return CMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
 
-def m_swap(M, m=None):
-    # swap between rows/cols form
-    n = len(M)
-    if m is None:
-        m = n
-    T = [0]*m
-    for j in range(n):
-        for i in range(m):
+def rcc_mul(A: RMatrix, B: CMatrix) -> CMatrix:
+    assert isinstance(A, RMatrix) and isinstance(B, CMatrix)
+    assert A.c == B.r
+    return CMatrix(A.r, B.c, [rv_mul(A, b) for b in B.M])
+
+
+# swap/transpose primitives
+def _swap(M, bl):
+    T = [0]*bl
+    for j in range(len(M)):
+        for i in range(bl):
             if M[j]&(1<<i):
                 T[i] |= 1<<j
     return T
 
-def m_id(n):
+def rc_swap(M: RMatrix) -> CMatrix:
+    assert isinstance(M, RMatrix)
+    return CMatrix(M.r, M.c, _swap(M.M, M.c))
+
+def cr_swap(M: CMatrix) -> RMatrix:
+    assert isinstance(M, CMatrix)
+    return RMatrix(M.r, M.c, _swap(M.M, M.r))
+
+def r_transpose(M: RMatrix) -> RMatrix:
+    assert isinstance(M, RMatrix)
+    return RMatrix(M.c, M.r, _swap(M.M, M.c))
+
+def c_transpose(M: CMatrix) -> CMatrix:
+    assert isinstance(M, CMatrix)
+    return CMatrix(M.c, M.r, _swap(M.M, M.r))
+
+
+# Gaussian elimination
+def _id(n: int):
     return [1<<i for i in range(n)]
 
-def m_gauss(M):
-    M = M.copy()
-    n = len(M)
-    I = m_id(n)
-    for j in range(n):
+def r_gauss(M: RMatrix):
+    assert isinstance(M, RMatrix)
+    r,c,M = M
+    M = list(M)  # copy / tuple -> list
+    I = _id(r)
+    for j in range(c):
         i0 = -1
-        for i in range(j, n):
+        for i in range(j, r):
             if (M[i]>>j)&1:
                 i0 = i
                 break
@@ -66,36 +104,36 @@ def m_gauss(M):
             continue
         M[j],M[i0] = M[i0],M[j]
         I[j],I[i0] = I[i0],I[j]
-        for i in range(j+1, n):
+        for i in range(j+1, r):
             if (M[i]>>j)&1:
                 M[i] ^= M[j]
                 I[i] ^= I[j]
-    return M,I
+    return (RMatrix(r, c, M), RMatrix(r, r, I))
 
-def r_nullspace(M, m=None):
-    T,B = m_gauss(m_swap(M, m))
-    return [b for r,b in zip(T,B) if r==0]
+def r_nullspace(M: RMatrix):
+    assert isinstance(M, RMatrix)
+    T,B = r_gauss(r_transpose(M))
+    return [b for r,b in zip(T.M,B.M) if r==0]
 
-def r_print(M, m=None):
-    n = len(M)
-    if m is None:
-        m = n
-    line = f'{{:0{m}b}}'
-    for r in M:
+def r_print(M: RMatrix):
+    assert isinstance(M, RMatrix)
+    line = f'{{:0{M.c}b}}'
+    for r in M.M:
         print(line.format(r)[::-1])
 
 
 ## Sanity checks
 def _sanity_check1(it=100):
+    #N = poly2._K
     # squaring operator matrix
-    Sc = [poly2.pmodmul(1<<i, 1<<i) for i in range(N)]
+    Sc = CMatrix(N, N, [poly2.pmodmul(1<<i, 1<<i) for i in range(N)])
 
     k = 20  # for iterated squaring p -> p^(2^k) operator
     Mc = Sc
-    Mr = m_swap(Mc)
+    Mr = cr_swap(Mc)
     for _ in range(k-1):
         Mc = rcc_mul(Mr, Sc)
-        Mr = m_swap(Mc)
+        Mr = cr_swap(Mc)
 
     t0 = time.time()
     X = []
@@ -123,10 +161,10 @@ def _sanity_check1(it=100):
 
 def _sanity_check2(it=100):
     for _ in range(it):
-        n = random.randint(1,100)
-        m = random.randint(1,100)
-        M = [random.randint(0, (1<<m)-1) for _ in range(n)]
-        N = r_nullspace(M, m)
+        r = random.randint(1,100)
+        c = random.randint(1,100)
+        M = RMatrix(r, c, [random.randint(0, (1<<c)-1) for _ in range(r)])
+        N = r_nullspace(M)
         for v in N:
             assert rv_mul(M, v) == 0
 

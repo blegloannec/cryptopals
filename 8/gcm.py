@@ -6,7 +6,7 @@ from poly2 import *
 
 BS = 16
 
-def rev_int8(x):
+def _rev_int8(x):
     # for bit-level little-endianness
     r = 0
     for i in range(8):
@@ -14,12 +14,14 @@ def rev_int8(x):
             r |= 1<<(7-i)
     return r
 
+rev_int8 = tuple(_rev_int8(x) for x in range(1<<8))
+
 def bytes_to_poly(B):
     assert len(B) == BS
-    return int.from_bytes((rev_int8(b) for b in B), 'little')
+    return int.from_bytes((rev_int8[b] for b in B), 'little')
 
 def poly_to_bytes(p):
-    return bytes(rev_int8(b) for b in p.to_bytes(BS, 'little'))
+    return bytes(rev_int8[b] for b in p.to_bytes(BS, 'little'))
 
 def _aes_gcm_crypt(key, nonce, msg):
     # CTR encryption
@@ -80,10 +82,10 @@ def AES_GCM_decrypt(key, nonce, ciph_mac, data=b''):
 # Sanity check
 def sanity_check(it=10):
     for _ in range(it):
-        key   = get_random_bytes(BS)
-        nonce = get_random_bytes(12)
-        msg   = get_random_bytes(secrets.randbelow(1<<9))
-        data  = get_random_bytes(secrets.randbelow(1<<9))
+        key   = os.urandom(BS)
+        nonce = os.urandom(12)
+        msg   = os.urandom(secrets.randbelow(1<<9))
+        data  = os.urandom(secrets.randbelow(1<<9))
         ciph0, mac0 = ciph_mac = AES_GCM_encrypt(key, nonce, msg, data)
         C = AES.new(key, AES.MODE_GCM, nonce=nonce)
         C.update(data)
@@ -93,6 +95,5 @@ def sanity_check(it=10):
         assert msg1 == msg
 
 if __name__=='__main__':
-    from Cryptodome.Random import get_random_bytes
-    import secrets
+    import os, secrets
     sanity_check()
