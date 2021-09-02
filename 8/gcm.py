@@ -6,15 +6,15 @@ from poly2 import *
 
 BS = 16
 
-def _rev_int8(x):
+def _rev_int(x, bl=8):
     # for bit-level little-endianness
     r = 0
-    for i in range(8):
+    for i in range(bl):
         if (x>>i)&1:
-            r |= 1<<(7-i)
+            r |= 1<<(bl-1-i)
     return r
 
-rev_int8 = tuple(_rev_int8(x) for x in range(1<<8))
+rev_int8 = tuple(_rev_int(x) for x in range(1<<8))
 
 def bytes_to_poly(B):
     assert len(B) == BS
@@ -45,7 +45,7 @@ def get_h_s(key, nonce):
     s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     return (h,s)
 
-def _aes_gcm_mac(key, nonce, ciph, data):
+def _aes_gcm_mac(key, nonce, ciph, data=b''):
     # MAC computation
     data_pad = b'\x00'*((-len(data))%BS)
     ciph_pad = b'\x00'*((-len(ciph))%BS)

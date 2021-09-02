@@ -18,6 +18,15 @@ from copy import copy
 RMatrix = namedtuple('RMatrix', ('r','c','M'))
 CMatrix = namedtuple('CMatrix', ('r','c','M'))
 
+def rmatrix(r, c, M):
+    assert len(M) == r
+    return RMatrix(r, c, M)
+
+def cmatrix(r, c, M):
+    assert len(M) == c
+    return CMatrix(r, c, M)
+
+
 def _cnt1s(x: int) -> int:
     o = 0
     while x:
@@ -25,7 +34,7 @@ def _cnt1s(x: int) -> int:
         x &= x-1
     return o
 
-def v_dot(x: int , y: int) -> int:
+def v_dot(x: int, y: int) -> int:
     return _cnt1s(x&y)&1
 
 def rv_mul(M: RMatrix, v: int) -> int:  # fast
@@ -124,9 +133,8 @@ def r_print(M: RMatrix):
 
 ## Sanity checks
 def _sanity_check1(it=100):
-    #N = poly2._K
     # squaring operator matrix
-    Sc = CMatrix(N, N, [poly2.pmodmul(1<<i, 1<<i) for i in range(N)])
+    Sc = CMatrix(BS, BS, [poly2.pmodmul(1<<i, 1<<i) for i in range(BS)])
 
     k = 20  # for iterated squaring p -> p^(2^k) operator
     Mc = Sc
@@ -138,7 +146,7 @@ def _sanity_check1(it=100):
     t0 = time.time()
     X = []
     for _ in range(it):
-        x = random.randint(0, (1<<N)-1)
+        x = random.randint(0, (1<<BS)-1)
         #z = poly2.pmodmul(x, x)
         z = poly2.pmodexp(x, 1<<k)
         X.append((x, z))
@@ -160,17 +168,47 @@ def _sanity_check1(it=100):
     print(f'row mat mul  {dt:.3f} s')
 
 def _sanity_check2(it=100):
+    # constant mul operator matrix
+    cst = random.randint(0, (1<<BS)-1)
+    Mc = CMatrix(BS, BS, [poly2.pmodmul(cst, 1<<i) for i in range(BS)])
+    Mr = cr_swap(Mc)
+
+    t0 = time.time()
+    X = []
+    for _ in range(it):
+        x = random.randint(0, (1<<BS)-1)
+        z = poly2.pmodmul(cst, x)
+        X.append((x, z))
+    dt = time.time()-t0
+    print(f'poly cst mul {dt:.3f} s')
+
+    t0 = time.time()
+    for x,z in X:
+        y = cv_mul(Mc, x)
+        assert y == z
+    dt = time.time()-t0
+    print(f'col mat mul  {dt:.3f} s')
+
+    t0 = time.time()
+    for x,z in X:
+        y = rv_mul(Mr, x)
+        assert y == z
+    dt = time.time()-t0
+    print(f'row mat mul  {dt:.3f} s')
+
+def _sanity_check3(it=100):
     for _ in range(it):
         r = random.randint(1,100)
         c = random.randint(1,100)
         M = RMatrix(r, c, [random.randint(0, (1<<c)-1) for _ in range(r)])
         N = r_nullspace(M)
-        for v in N:
-            assert rv_mul(M, v) == 0
+        assert all(rv_mul(M, v)==0 for v in N)
 
 if __name__=='__main__':
     import random, time, poly2
     random.seed()
-    N = poly2._K
+    BS = poly2._K
     _sanity_check1()
+    print()
     _sanity_check2()
+    _sanity_check3()
