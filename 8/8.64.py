@@ -1,32 +1,37 @@
 #!/usr/bin/env python3
 
-import os, gcm, poly2
-import os.path, pickle
+import os, secrets
+import gcm, poly2
 from matrix2 import *
+import os.path, pickle
 
 
 ## Parameters
-bs = poly2._K    # 128 bits
-BS = bs>>3       # 16 bytes
+BS = gcm.BS      # 16 bytes
+bs = 8*BS        # 128 bits
 msk = (1<<bs)-1
-n = 9            # /!\ TODO 9->17 for 8->16 bits
-fdata = '64_data.pickle'
+n  = 9           # n-1 = 8 rows forced to 0
+HS = 2           # 2 bytes = 16 bits hash size
+hs = 8*HS
+
+# pre-computed data file (re-computed when missing)
+fprecomp = f'64_data_{n}.pickle'
 
 
 ## SECRET DATA
-_key   = os.urandom(16)
+_key   = os.urandom(BS)
 _nonce = os.urandom(12)
-_msg   = os.urandom(1<<(n+4))
+_msg   = os.urandom((1<<n)*BS)      # 2^n blocks
 _h, _  = gcm.get_h_s(_key, _nonce)
 ##
 
 
-## == truncated MAC GCM == ##
+## == Truncated-MAC GCM == ##
 def truncated_GCM_encrypt(key, nonce, msg):
     ciph, mac = gcm.AES_GCM_encrypt(key, nonce, msg)
-    return (ciph, mac[:2])  # /!\ TODO 2->4  # 32-bit truncated MAC
+    return (ciph, mac[:HS])  # truncated MAC
 
-# decrypt is the same
+# decrypt is the same (we already allow truncated mac in gcm module)
 truncated_GCM_decrypt = gcm.AES_GCM_decrypt
 
 def oracle(ciph_mac):
@@ -56,7 +61,7 @@ def gen_Rc(c):
 
 def gen_Ad(D):
     # D = [d1, ..., dn]
-    A = cmatrix(bs, bs, [0]*bs)
+    A = cmatrix(bs, bs)
     for i,di in enumerate(D):
         if di:
             Rc = gen_Rc(di)
@@ -64,26 +69,39 @@ def gen_Ad(D):
     A = cr_swap(A)
     return A
 
-def gen_T():
-    T = []
+def gen_canonical_Ad(print_progress=True):
+    CanonicalAd = []
     for i in range(n):
-        print(i, end=', ', flush=True)
+        if print_progress:
+            print(i, end=', ', flush=True)
         for b in range(bs):
             D = [0]*n
             D[i] |= 1<<b
             A = gen_Ad(D)
-            c = 0
-            for j in range(n-1):
-                c |= A.M[j]<<(j*bs)
-            T.append(c)
-    T = cmatrix((n-1)*bs, n*bs, T)
+            CanonicalAd.append(A)
+    return CanonicalAd
+
+def gen_T(CanonicalAd, row_cnt=n-1):
+    # row_cnt: number of rows of Ad to stuff in T (to force to 0)
+    #          n-1 by default
+    #          but gets augmented in the accelerated attack
+    #assert CanonicalAd[0].r == bs
+    cs = CanonicalAd[0].c  # can be < bs in the accelerated attack
+    T = []
+    for Ad in CanonicalAd:
+        c = 0
+        for j in range(row_cnt):
+            c |= Ad.M[j]<<(j*cs)
+        T.append(c)
+    T = cmatrix(row_cnt*cs, n*bs, T)
     T = cr_swap(T)
     return T
 
 def randvec(V):
+    pick = secrets.randbelow(1<<len(V))
     u = 0
-    for v in V:
-        if os.urandom(1)[0]&1:
+    for i,v in enumerate(V):
+        if pick&(1<<i):
             u ^= v
     return u
 
@@ -96,59 +114,124 @@ def alter_msg(msg, v):
     return out
 
 
+## Sanity check
 def sanity_check():
-    import secrets
-    u = secrets.randbelow(1<<(bs*n))
+    u = secrets.randbelow(1<<(n*bs))
     ciph1,mac1 = gcm.AES_GCM_encrypt(_key, _nonce, _msg)
     ciph2 = alter_msg(ciph1, u)
     mac2 = gcm._aes_gcm_mac(_key, _nonce, ciph2)
     mac1 = gcm.bytes_to_poly(mac1)
     mac2 = gcm.bytes_to_poly(mac2)
     d = mac1^mac2
-    c1 = [gcm.bytes_to_poly(ciph1[i:i+BS]) for i in reversed(range(0, len(ciph1), BS))]
-    c2 = [gcm.bytes_to_poly(ciph2[i:i+BS]) for i in reversed(range(0, len(ciph2), BS))]
-    c1 = [c1[(1<<i)-2] for i in range(1, n+1)]
-    c2 = [c2[(1<<i)-2] for i in range(1, n+1)]
-    D = [a^b for a,b in zip(c1,c2)]
+    C1 = [gcm.bytes_to_poly(ciph1[i:i+BS]) for i in reversed(range(0, len(ciph1), BS))]
+    C2 = [gcm.bytes_to_poly(ciph2[i:i+BS]) for i in reversed(range(0, len(ciph2), BS))]
+    D1 = [C1[(1<<i)-2] for i in range(1, n+1)]
+    D2 = [C2[(1<<i)-2] for i in range(1, n+1)]
+    D = [a^b for a,b in zip(D1,D2)]
     A = gen_Ad(D)
     assert rv_mul(A, _h) == d
 
+
+## == Attacks == ##
+def basic_attack(ciph, mac):
+    K = []
+    while len(K) < bs-1:
+        print(f'|K| = {len(K)}')
+        cnt = 1
+        while True:
+            print(f'Looking for collision... {cnt}' , end='\r', flush=True)
+            u = randvec(NT)
+            ciph1 = alter_msg(ciph, u)
+            if oracle((ciph1, mac)):
+                print(f'Looking for collision... ok ({cnt}).')
+                break
+            cnt += 1
+        D = [(u>>(i*bs))&msk for i in range(n)]
+        A = gen_Ad(D)
+        K += A.M[n-1:hs]  # non-zero lines corresponding to the truncated hash
+        if len(K) >= bs-1:
+            # reducing K to a free set of vectors
+            print('Checking independance...')
+            K = rmatrix(len(K), bs, K)
+            rank,K,_ = r_gauss(K)
+            K = K.M[:rank]
+    K = rmatrix(len(K), bs, K)
+    N = r_nullspace(K)
+    assert len(N) == 1
+    h_ = N[0]
+    print(hex(_h))
+    print(hex(h_))
+    assert h_ == _h
+
+def accelerated_attack(ciph, mac):
+    # we truncate to the first hs lines of Ad (hash part) to fasten
+    # the update of Ad's (since here we re-do it at each iteration)
+    TruncAd = [rmatrix(hs, Ad.c, Ad.M[:hs]) for Ad in CanonicalAd]
+    zerows = n-1       # nb of rows forced to 0
+    max_zerows = hs-5  # we want at least 5 new vectors
+    K = rmatrix(0, bs)
+    NewNT = NT
+    X = cmatrix(bs, bs)
+    while X.c > 1:
+        cnt = 1
+        while True:
+            print(f'Looking for collision... {cnt}' , end='\r', flush=True)
+            u = randvec(NewNT)
+            ciph1 = alter_msg(ciph, u)
+            if oracle((ciph1, mac)):
+                print(f'Looking for collision... ok ({cnt}).')
+                break
+            cnt += 1
+        D = [(u>>(i*bs))&msk for i in range(n)]
+        A = gen_Ad(D)
+        K = rmatrix(K.r+hs-zerows, bs, K.M+A.M[zerows:hs])  # non-zero lines corresponding to the truncated hash
+        print("Updating X...")
+        X = r_nullspace(K)
+        X = cmatrix(bs, len(X), X)
+        print(f'dim N(K) = {X.c}')
+        # Tradeoff:
+        #   the smaller X.c
+        #   the bigger we can increase "zerows" the number of rows forced to 0
+        #   to reduce the expected number of tries before a collision
+        #  BUT
+        #   we the smaller number of new vectors for K we get
+        #   so we need an upper bound on zerows
+        zerows = min((n-1)*bs // X.c, max_zerows)
+        print(f'#0-rows = {zerows}, #+vectors = {hs-zerows}, E[iterations] = {1<<(hs-zerows)}')
+        print("Updating canonical Ad's...")
+        NewAd = [rcr_mul(Ad, X) for Ad in TruncAd]
+        print('Updating T...')
+        NewT = gen_T(NewAd, zerows)
+        print(f'Updating N(T)...')
+        NewNT = r_nullspace(NewT)
+    h_ = X.M[0]
+    print(hex(_h))
+    print(hex(h_))
+    assert h_ == _h
+
+
+## == MAIN == ##
 def main():
+    global CanonicalAd, T, NT
     ciph,mac = ciph_mac = truncated_GCM_encrypt(_key, _nonce, _msg)
     #assert truncated_GCM_decrypt(_key, _nonce, ciph_mac) == _msg
     #assert oracle(ciph_mac)
 
-    sanity_check()
-
-    if os.path.exists(fdata):
-        print(f'Loading pre-computed data ({fdata})...', end=' ', flush=True)
-        T,N = pickle.load(open(fdata, 'rb'))
+    if os.path.exists(fprecomp):
+        print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
+        CanonicalAd, T, NT = pickle.load(open(fprecomp, 'rb'))
     else:
         print('Computing T and N...', end=' ', flush=True)
-        T = gen_T()
-        N = r_nullspace(T)
-        pickle.dump((T,N), open(fdata, 'wb'))
+        CanonicalAd = gen_canonical_Ad()
+        T = gen_T(CanonicalAd)
+        NT = r_nullspace(T)
+        pickle.dump((CanonicalAd, T, NT), open(fprecomp, 'wb'))
     print('ok.')
-    #assert all(m2.rv_mul(T, v)==0 for v in N)
 
-    cnt = 1
-    while True:
-        print(f'Looking for collision... {cnt}' , end='\r', flush=True)
-        u = randvec(N)
-        #assert m2.rv_mul(T, u) == 0
+    #basic_attack(ciph, mac)
+    accelerated_attack(ciph, mac)
 
-        #D = [(u>>(i*bs))&msk for i in range(n)]
-        #A = Ad(D)
-        #X = m2.rmatrix(10, A.c, A.M[:10])
-        #m2.r_print(X)
-        
-        ciph1 = alter_msg(ciph, u)
-        if oracle((ciph1, mac)):
-            print(f'Looking for collision... ok ({cnt}).')
-            break
-        cnt += 1
-
-    # TO BE CONTINUED...
 
 if __name__=='__main__':
+    #sanity_check()
     main()

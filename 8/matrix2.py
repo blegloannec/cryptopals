@@ -18,15 +18,31 @@ from copy import copy
 RMatrix = namedtuple('RMatrix', ('r','c','M'))
 CMatrix = namedtuple('CMatrix', ('r','c','M'))
 
-def rmatrix(r, c, M):
-    assert len(M) == r
+def rmatrix(r: int, c: int, M=None) -> RMatrix:
+    if M is None:
+        M = [0]*r
+    else:
+        assert len(M) == r
     return RMatrix(r, c, M)
 
-def cmatrix(r, c, M):
-    assert len(M) == c
+def cmatrix(r: int, c: int, M=None) -> CMatrix:
+    if M is None:
+        M = [0]*c
+    else:
+        assert len(M) == c
     return CMatrix(r, c, M)
 
+def _id(n: int):
+    return [1<<i for i in range(n)]
 
+def r_id(n: int) -> RMatrix:
+    return RMatrix(n, n, _id(n))
+
+def c_id(n: int) -> CMatrix:
+    return CMatrix(n, n, _id(n))
+
+
+## Basic operations
 def _cnt1s(x: int) -> int:
     o = 0
     while x:
@@ -36,6 +52,16 @@ def _cnt1s(x: int) -> int:
 
 def v_dot(x: int, y: int) -> int:
     return _cnt1s(x&y)&1
+
+def r_add(A: RMatrix, B: RMatrix) -> RMatrix:
+    assert isinstance(A, RMatrix) and isinstance(B, RMatrix)
+    assert A.r == B.r and A.c == B.c
+    return RMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
+
+def c_add(A: CMatrix, B: CMatrix) -> CMatrix:  # actually the same
+    assert isinstance(A, CMatrix) and isinstance(B, CMatrix)
+    assert A.r == B.r and A.c == B.c
+    return CMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
 
 def rv_mul(M: RMatrix, v: int) -> int:  # fast
     assert isinstance(M, RMatrix)
@@ -52,23 +78,13 @@ def cv_mul(M: CMatrix, v: int) -> int:  # slow
             p ^= ((M.M[k]>>i) & (v>>k) & 1) << i
     return p
 
-def r_add(A: RMatrix, B: RMatrix) -> RMatrix:
-    assert isinstance(A, RMatrix) and isinstance(B, RMatrix)
-    assert A.r == B.r and A.c == B.c
-    return RMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
-
-def c_add(A: CMatrix, B: CMatrix) -> CMatrix:  # actually the same
-    assert isinstance(A, CMatrix) and isinstance(B, CMatrix)
-    assert A.r == B.r and A.c == B.c
-    return CMatrix(A.r, A.c, [a^b for a,b in zip(A.M,B.M)])
-
-def rcc_mul(A: RMatrix, B: CMatrix) -> CMatrix:
+def rcc_mul(A: RMatrix, B: CMatrix) -> CMatrix:  # fast
     assert isinstance(A, RMatrix) and isinstance(B, CMatrix)
     assert A.c == B.r
     return CMatrix(A.r, B.c, [rv_mul(A, b) for b in B.M])
 
 
-# swap/transpose primitives
+## Swap/Transpose primitives
 def _swap(M, bl):
     T = [0]*bl
     for j in range(len(M)):
@@ -94,35 +110,42 @@ def c_transpose(M: CMatrix) -> CMatrix:
     return CMatrix(M.c, M.r, _swap(M.M, M.r))
 
 
-# Gaussian elimination
-def _id(n: int):
-    return [1<<i for i in range(n)]
+## Additional convenient operations
+def rcr_mul(A: RMatrix, B: CMatrix) -> RMatrix:
+    return cr_swap(rcc_mul(A, B))
 
+def ccc_mul(A: CMatrix, B: CMatrix) -> CMatrix:
+    return rcc_mul(cr_swap(A), B)
+
+
+## Gaussian elimination
 def r_gauss(M: RMatrix):
     assert isinstance(M, RMatrix)
     r,c,M = M
+    rank = 0
     M = list(M)  # copy / tuple -> list
     I = _id(r)
     for j in range(c):
         i0 = -1
-        for i in range(j, r):
+        for i in range(rank, r):
             if (M[i]>>j)&1:
                 i0 = i
                 break
         if i0 < 0:
             continue
-        M[j],M[i0] = M[i0],M[j]
-        I[j],I[i0] = I[i0],I[j]
-        for i in range(j+1, r):
+        M[rank],M[i0] = M[i0],M[rank]
+        I[rank],I[i0] = I[i0],I[rank]
+        for i in range(rank+1, r):
             if (M[i]>>j)&1:
-                M[i] ^= M[j]
-                I[i] ^= I[j]
-    return (RMatrix(r, c, M), RMatrix(r, r, I))
+                M[i] ^= M[rank]
+                I[i] ^= I[rank]
+        rank += 1
+    return (rank, RMatrix(r, c, M), RMatrix(r, r, I))
 
 def r_nullspace(M: RMatrix):
     assert isinstance(M, RMatrix)
-    T,B = r_gauss(r_transpose(M))
-    return [b for r,b in zip(T.M,B.M) if r==0]
+    rank,_,B = r_gauss(r_transpose(M))
+    return B.M[rank:]
 
 def r_print(M: RMatrix):
     assert isinstance(M, RMatrix)
