@@ -10,8 +10,8 @@ import os.path, pickle
 BS = gcm.BS      # 16 bytes
 bs = 8*BS        # 128 bits
 msk = (1<<bs)-1
-n  = 9           # n-1 = 8 rows forced to 0
-HS = 2           # 2 bytes = 16 bits hash size
+n  = 17          # n-1 = 16 rows forced to 0
+HS = 4           # 2 bytes = 32 bits hash size
 hs = 8*HS
 
 # pre-computed data file (re-computed when missing)
@@ -34,12 +34,25 @@ def truncated_GCM_encrypt(key, nonce, msg):
 # decrypt is the same (we already allow truncated mac in gcm module)
 truncated_GCM_decrypt = gcm.AES_GCM_decrypt
 
+'''
 def oracle(ciph_mac):
     try:
         truncated_GCM_decrypt(_key, _nonce, ciph_mac)
     except AssertionError:
         return False
     return True
+'''
+
+_poly_h2i = [_h]
+for _ in range(n+2):
+    _poly_h2i.append(poly2.pmodmul(_poly_h2i[-1], _poly_h2i[-1]))
+
+def fast_oracle(D):
+    hmsk = (1<<hs)-1
+    d = 0
+    for i,di in enumerate(D):
+        d ^= poly2.pmodmul(di, _poly_h2i[i+1])
+    return d&hmsk == 0
 
 
 ## == Operators matrices == ##
@@ -105,6 +118,7 @@ def randvec(V):
             u ^= v
     return u
 
+'''
 def alter_msg(msg, v):
     C = [gcm.bytes_to_poly(msg[i:i+BS]) for i in reversed(range(0, len(msg), BS))]
     for i in range(1, n+1):
@@ -130,7 +144,7 @@ def sanity_check():
     D = [a^b for a,b in zip(D1,D2)]
     A = gen_Ad(D)
     assert rv_mul(A, _h) == d
-
+'''
 
 ## == Attacks == ##
 def basic_attack(ciph, mac):
@@ -141,12 +155,12 @@ def basic_attack(ciph, mac):
         while True:
             print(f'Looking for collision... {cnt}' , end='\r', flush=True)
             u = randvec(NT)
-            ciph1 = alter_msg(ciph, u)
-            if oracle((ciph1, mac)):
+            #ciph1 = alter_msg(ciph, u)
+            D = [(u>>(i*bs))&msk for i in range(n)]
+            if fast_oracle(D):
                 print(f'Looking for collision... ok ({cnt}).')
                 break
             cnt += 1
-        D = [(u>>(i*bs))&msk for i in range(n)]
         A = gen_Ad(D)
         K += A.M[n-1:hs]  # non-zero lines corresponding to the truncated hash
         if len(K) >= bs-1:
@@ -163,27 +177,28 @@ def basic_attack(ciph, mac):
     print(hex(h_))
     assert h_ == _h
 
+
 def accelerated_attack(ciph, mac):
     # we truncate to the first hs lines of Ad (hash part) to fasten
     # the update of Ad's (since here we re-do it at each iteration)
     TruncAd = [rmatrix(hs, Ad.c, Ad.M[:hs]) for Ad in CanonicalAd]
-    zerows = n-1       # nb of rows forced to 0
-    max_zerows = hs-5  # we want at least 5 new vectors
+    zerows = n-1        # nb of rows forced to 0
+    max_zerows = hs-10  # we want at least 10 new vectors
     K = rmatrix(0, bs)
     NewNT = NT
     X = cmatrix(bs, bs)
     while X.c > 1:
         cnt = 1
-        print(f'#0ws = {zerows}, #+vec = {hs-zerows}, E[iter] = {1<<(hs-zerows)}')
+        print(f'#0-rows = {zerows}, #+vectors = {hs-zerows}, E[iterations] = {1<<(hs-zerows)}')
         while True:
             print(f'Looking for collision... {cnt}' , end='\r', flush=True)
             u = randvec(NewNT)
-            ciph1 = alter_msg(ciph, u)
-            if oracle((ciph1, mac)):
+            D = [(u>>(i*bs))&msk for i in range(n)]
+            #ciph1 = alter_msg(ciph, u)
+            if fast_oracle(D):
                 print(f'Looking for collision... ok ({cnt}).')
                 break
             cnt += 1
-        D = [(u>>(i*bs))&msk for i in range(n)]
         A = gen_Ad(D)
         K = rmatrix(K.r+hs-zerows, bs, K.M+A.M[zerows:hs])  # non-zero lines corresponding to the truncated hash
         print("Updating X...")
