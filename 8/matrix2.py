@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 from collections import namedtuple
-from copy import copy
+import random
+random.seed()
+
 
 ## === Vectors and matrices in GF(2)^k === ##
 # vectors  are represented by integers
@@ -40,6 +42,12 @@ def r_id(n: int) -> RMatrix:
 
 def c_id(n: int) -> CMatrix:
     return CMatrix(n, n, _id(n))
+
+def r_print(M: RMatrix):
+    assert isinstance(M, RMatrix)
+    line = f'{{:0{M.c}b}}'
+    for r in M.M:
+        print(line.format(r)[::-1])
 
 
 ## Basic operations
@@ -117,6 +125,18 @@ def rcr_mul(A: RMatrix, B: CMatrix) -> RMatrix:
 def ccc_mul(A: CMatrix, B: CMatrix) -> CMatrix:
     return rcc_mul(cr_swap(A), B)
 
+def r_trunc(M: RMatrix, r: int) -> RMatrix:
+    assert isinstance(M, RMatrix)
+    assert r <= M.r
+    return RMatrix(r, M.c, M.M[:r])
+
+def r_extend(M: RMatrix, R) -> RMatrix:
+    assert isinstance(M, RMatrix)
+    return RMatrix(M.r+len(R), M.c, M.M+R)
+
+def r_random(r: int, c: int) -> RMatrix:
+    return RMatrix(r, c, [random.randint(0, (1<<c)-1) for _ in range(r)])
+
 
 ## Gaussian elimination
 def r_gauss(M: RMatrix):
@@ -147,11 +167,54 @@ def r_nullspace(M: RMatrix):
     rank,_,B = r_gauss(r_transpose(M))
     return B.M[rank:]
 
-def r_print(M: RMatrix):
+def _v_swap(b, i, j):
+    bi = (b>>i)&1
+    bj = (b>>j)&1
+    return b if bi==bj else b^(1<<i)^(1<<j)
+
+# particular solution to a system
+def r_system_solve(M: RMatrix, b: int) -> int:
     assert isinstance(M, RMatrix)
-    line = f'{{:0{M.c}b}}'
-    for r in M.M:
-        print(line.format(r)[::-1])
+    r,c,M = M
+    rank = 0
+    M = list(M)  # copy / tuple -> list
+    for j in range(c):
+        i0 = -1
+        for i in range(rank, r):
+            if (M[i]>>j)&1:
+                i0 = i
+                break
+        if i0 < 0:
+            continue
+        M[rank],M[i0] = M[i0],M[rank]
+        b = _v_swap(b, rank, i0)
+        for i in range(rank+1, r):
+            if (M[i]>>j)&1:
+                M[i] ^= M[rank]
+                b ^= ((b>>rank)&1)<<i
+        rank += 1
+    # backwards resolution
+    a = aset = 0
+    for i in range(r-1, -1, -1):
+        x = M[i]
+        bi = (b>>i)&1
+        unset = []
+        while x:
+            j = x&-x
+            x &= x-1
+            if aset&j:
+                if a&j:
+                    bi ^= 1
+            else:
+                unset.append(j)
+        for j in unset:
+            if bi:
+                a |= j
+                bi = 0
+            aset |= j
+        if bi:
+            return -1
+    return a
 
 
 ## Sanity checks
@@ -223,15 +286,28 @@ def _sanity_check3(it=100):
     for _ in range(it):
         r = random.randint(1,100)
         c = random.randint(1,100)
-        M = RMatrix(r, c, [random.randint(0, (1<<c)-1) for _ in range(r)])
+        M = r_random(r, c)
         N = r_nullspace(M)
         assert all(rv_mul(M, v)==0 for v in N)
 
+def _sanity_check4(it=100):
+    for _ in range(it):
+        r = random.randint(1,15)
+        c = random.randint(1,15)
+        M = r_random(r, c)
+        b = random.randint(0, (1<<r)-1)
+        a = r_system_solve(M, b)
+        if a < 0:
+            for x in range(1<<c):
+                assert rv_mul(M, x) != b
+        else:
+            assert rv_mul(M, a) == b
+
 if __name__=='__main__':
-    import random, time, poly2
-    random.seed()
+    import time, poly2
     BS = poly2._K
     _sanity_check1()
     print()
     _sanity_check2()
     _sanity_check3()
+    _sanity_check4()
