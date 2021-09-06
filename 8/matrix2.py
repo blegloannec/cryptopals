@@ -216,6 +216,28 @@ def r_system_solve(M: RMatrix, b: int) -> int:
             return -1
     return a
 
+def r_inverse(M: RMatrix):
+    assert isinstance(M, RMatrix)
+    assert M.r == M.c
+    n,_,M = M
+    M = list(M)  # copy / tuple -> list
+    I = _id(n)
+    for j in range(n):
+        i0 = -1
+        for i in range(j, n):
+            if (M[i]>>j)&1:
+                i0 = i
+                break
+        if i0 < 0:
+            return None
+        M[j],M[i0] = M[i0],M[j]
+        I[j],I[i0] = I[i0],I[j]
+        for i in range(n):
+            if i != j and (M[i]>>j)&1:
+                M[i] ^= M[j]
+                I[i] ^= I[j]
+    return RMatrix(n, n, I)
+
 
 ## Sanity checks
 def _sanity_check1(it=100):

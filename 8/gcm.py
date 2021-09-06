@@ -69,12 +69,16 @@ def AES_GCM_encrypt(key, nonce, msg, data=b''):
     mac = _aes_gcm_mac(key, nonce, ciph, data)
     return (ciph, mac)
 
+class InvalidMAC(Exception):
+    pass
+
 def AES_GCM_decrypt(key, nonce, ciph_mac, data=b''):
     assert len(key)   == BS
     assert len(nonce) == 12  # 96 bits
     ciph, mac0 = ciph_mac
     mac1 = _aes_gcm_mac(key, nonce, ciph, data)
-    assert mac1.startswith(mac0)  # allows truncated MAC
+    if not mac1.startswith(mac0):  # allows truncated MAC
+        raise InvalidMAC
     msg = _aes_gcm_crypt(key, nonce, ciph)
     return msg
 

@@ -53,7 +53,7 @@ truncated_GCM_decrypt = gcm.AES_GCM_decrypt
 def oracle(ciph_mac):
     try:
         truncated_GCM_decrypt(_key, _nonce, ciph_mac)
-    except AssertionError:
+    except gcm.InvalidMAC:
         return False
     return True
 '''
@@ -93,10 +93,10 @@ def gen_Rc(c):
 # Consider the authentication (without add. data) of a ciphertext [ck c(k-1) .. c1]
 #   mac = s + c0 h + ∑ ci h^i  for s the auth. mask and c0 the size block
 # consider a second ciphertext [c'k c'(k-1) .. c'1], same key (same s), same size (same c0)
-#   mac' = s + c0 h + ∑ ci h^i
-#   mac'-mac = ∑ (ci-c'i) h^i
-# if ciphertexts only differ in some indices i = 2^j, then for dj = c(2^j) - c'(2^j),
-#   mac'-mac = ∑ dj h^(2^j)
+#   mac' = s + c0 h + ∑ c'i h^i
+#   mac'-mac = ∑_{i>1} (c'i-ci) h^i
+# if ciphertexts only differ in some indices i = 2^j > 1, then for dj = c'(2^j)-c(2^j),
+#   mac'-mac = ∑_{j>0} dj h^(2^j)
 #            = ∑ Mc(dj) Ms^j h  for Mc(dj) the mult. by dj operator matrix
 #                                   and Ms     the squaring operator matrix
 #            = (∑ Mc(dj) Ms^j) h
@@ -220,7 +220,7 @@ def basic_attack():
 def accelerated_attack():
     # In the accelerated attack, we use the current K to improve our chances
     # of finding a collision.
-    # For X = ker K of size 128×k for k = dim ker K,
+    # For X a basis of ker K of size 128×k for k = dim ker K,
     # we know there exists h' in GF(2)^k such that h = X h'.
     # But then Ad h = 0 becomes Ad' h' = 0 with A'd = Ad X of size 128×k.
     # Let T' be the same as T but for A'. T' is of size k*z × 128n,
