@@ -69,7 +69,7 @@ def gen_RMcst(c):
 # if ciphertexts only differ in some indices i = 2^j > 1, then for dj = c'(2^j)-c(2^j),
 #   mac'-mac = ∑_{j>0} dj h^(2^j)
 #            = ∑ Mc(dj) Ms^j h  for Mc(dj) the mult. by dj operator matrix
-#                                   and Ms     the squaring operator matrix
+#                               and Ms the squaring operator matrix
 #            = (∑ Mc(dj) Ms^j) h
 # let Ad = ∑ Mc(dj) Ms^j
 # truncated MAC collision:
@@ -232,9 +232,10 @@ def accelerated_attack(ciph, mac):
                 print(f'Looking for collision... ok ({cnt}).')
                 break
             cnt += 1
+        print('Updating K...')
         A = gen_A(d)
         K = r_extend(K, A.M[zerows:hs])  # non-zero lines corresponding to the truncated hash
-        print('Updating X...')
+        print('Updating X = N(K)...')
         X = r_nullspace(K)
         X = cmatrix(bs, len(X), X)
         print(f'dim N(K) = {X.c}')
