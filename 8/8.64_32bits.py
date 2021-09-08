@@ -207,7 +207,7 @@ def basic_attack():
         K = r_extend(K, A.M[n-1:hs])  # non-zero lines corresponding to the truncated hash
         if K.r >= bs-1:
             # reducing K to a free set of vectors
-            print('Checking independance...')
+            print('Checking independence...')
             rank,K,_ = r_gauss(K)
             K = r_trunc(K, rank)
     N = r_nullspace(K)
@@ -246,7 +246,7 @@ def accelerated_attack():
             cnt += 1
         A = gen_A(d)
         K = r_extend(K, A.M[zerows:hs])  # non-zero lines corresponding to the truncated hash
-        print("Updating X...")
+        print('Updating X...')
         X = r_nullspace(K)
         X = cmatrix(bs, len(X), X)
         print(f'dim N(K) = {X.c}')

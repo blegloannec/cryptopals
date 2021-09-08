@@ -39,10 +39,12 @@ def _aes_gcm_crypt(key, nonce, msg):
     ciph = b''.join(ciph)
     return ciph
 
-def get_h_s(key, nonce):
+def get_h_s(key, nonce=None):
     # auth. "key" and "mask"
     h = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(b'\x00'*BS))
-    s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
+    s = None
+    if nonce is not None:
+        s = bytes_to_poly(AES.new(key, AES.MODE_ECB).encrypt(nonce + b'\x00\x00\x00\x01'))
     return (h,s)
 
 def _aes_gcm_mac(key, nonce, ciph, data=b''):
