@@ -252,6 +252,13 @@ def attack():
         if X.c == 1:
             break
         zerows = min(n*bs//X.c, max_zerows)
+        # NB: As we have n*bs here (instead of (n-1)*bs in 8.64), there is
+        #     a small risk that k*z (k = dim ker K = X.c, z = zerows) gets
+        #     really close to n*bs and consequently that dim ker T ≥ n*bs-k*z
+        #     gets too small compared to hs-z. To prevent this, we slightly
+        #     reduce z whenever this happens.
+        if zerows > n and n*bs-X.c*zerows < 2*(hs-zerows):
+            zerows -= 1
         print("Updating canonical A(ei)'s...")
         NewA = [rcr_mul(Aei, X) for Aei in TruncA]
         print('Updating T...')
@@ -295,6 +302,7 @@ def main():
     print('ok.')
     Tinv = r_inverse(T)
 
+    print(f'Parameters: hs = {hs} bits, n = {n}, #0ws = n = {n}')
     attack()
 
 

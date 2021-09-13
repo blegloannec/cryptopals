@@ -4,9 +4,9 @@ _MOD = (1<<128) | (1<<7) | (1<<2) | (1<<1) | 1
 _K = 128
 
 
-import random, sys
+import sys, random
+sys.setrecursionlimit(10000)  # for recursive fast exp. implem.
 random.seed()
-sys.setrecursionlimit(10000)
 
 
 ## === Polynomials in GF(2)[X] === ##
@@ -278,6 +278,9 @@ def rand_monic_poly2k(d, k=_K):
     return Poly2k([random.randint(0, 1<<k) for _ in range(d)]+[1])
 
 
+## === Factorization === ##
+# https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
+
 def square_free_factorization(P, b=1):
     # Input:  A monic polynomial P in Fq[x] where q = p^k, p = 2
     # Output: Pairs (Q, m) where Q is a square-free polynomial
@@ -328,8 +331,10 @@ def distinct_degree_factorization(P, deg_max=1<<30):
     while F.deg() >= 2*i and i <= deg_max:
         # Thm: X^(q^i) - X is the product of all monic irreducible poly.
         #      of degree dividing i.         [non-trivial useful result]
+        # hence GCD(F, X^(q^i)-X) = product of all factors of degree i in F       
         Xqi = Xqi.modexp(q, F)  # good enough way to compute X^(q^i) mod F
-        # hence GCD(F, X^(q^i)-X) = product of all factors of degree i in F
+        # (see sanity check 4 below for a faster approach taking advantage
+        #  of the linearity of x -> x^k over GF(q)[x]/(F))
         G = F.gcd(Xqi - X)
         if G != 1:
             yield (G, i)
@@ -345,9 +350,22 @@ def equal_degree_factorization(f, d):  # Cantor-Zassenhaus
     # Output: the factors of f (all of degree d)
     n = f.deg()
     #assert n%d == 0
+    # f is the product of n/d irreducible factors of deg. d.
+    # For any such factor fi, GF(q)[x]/(fi) ~ GF(q^d)
+    # with q = 2^128 = 1 mod 3, hence 3 | q^d-1, hence
+    # there exists a subgroup of order 3 in GF(q^d)*
+    # Elevating a random element h to the power e = (q^d-1)/3,
+    # we land into that subgroup and have a 1/3 chance to
+    # land on 1, but then h^e-1 = 0 mod fi  (fi | h^e-1)
     e = ((1<<_K)**d-1)//3
-
-    S = [f]
+    # We do not know the fi's, but we can take a random h mod f
+    # and compute g = gcd(h^e-1, f). For each fi, there is a 1/3
+    # chance that fi | g, hence g roughly splits f into 1/3 & 2/3
+    # of its factors (this is an implicit application of the CRT
+    # on GF(q)[x]/(f) ~ ∏ GF(q)[x]/(fi)).
+    # Then repeat with other h on the resulting non-fully split
+    # factors...
+    S = [f]  # current set of factors
     while S:
         h = rand_monic_poly2k(n-1)
         g = h.gcd(f)
@@ -356,7 +374,7 @@ def equal_degree_factorization(f, d):  # Cantor-Zassenhaus
 
         T = []
         for u in S:
-            if u.deg() == d:
+            if u.deg() == d:  # fully-split -> output
                 yield u
             else:
                 #assert u.deg() > d
@@ -378,9 +396,31 @@ def _sanity_check_3(it=1):
             D *= R**a
         assert D == C
 
+def _sanity_check_4(it=5):
+    # On computing X^(q^i) mod F (can be useful in DDF and EDF)...
+    # Remember Frobenius morphism x -> x^p in a ring of characteristic p.
+    # Let q = p^k for some k. Over GF(q), x -> x^q is the identity.
+    # Given some polynomial F, in the ring GF(q)[x]/(F) seen as
+    # a GF(q) vector space of dim. d = d°F, the map x -> x^q is linear.
+    q = 1<<_K
+    F = rand_poly2k(random.randint(2, 10))
+    # Pre-computing this map over the canonical basis (1, ..., X^(d-1))
+    # allows a faster computation than by fast modular expo.
+    Canon = [Poly2k(1), Poly2k([0,1]).modexp(q, F)]
+    for k in range(2, F.deg()):
+        Canon.append((Canon[-1]*Canon[1]) % F)
+
+    for _ in range(it):
+        P = rand_poly2k(F.deg()-1)
+        Pq = Poly2k(0)
+        for p,qi in zip(P.C, Canon):
+            Pq += p*qi
+        assert Pq == P.modexp(q, F)
+
 
 ## === MAIN === ##
 if __name__=='__main__':
     _sanity_check_1()
     _sanity_check_2()
     _sanity_check_3()
+    _sanity_check_4()

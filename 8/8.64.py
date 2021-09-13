@@ -116,12 +116,12 @@ def gen_canonical_A(print_progress=True):
 # each of the 128n matrices A(e1) .. A(en).
 # We are looking for d such that T*d = 0, i.e. d in ker T.
 # NB: T only depends on the GF(2^128) field we use (and z).
-# For k = dim ker T, we get 2^k candidates to pick randomly for d.
+# For t = dim ker T, we get 2^t candidates to pick randomly for d.
 # We want this to be large enough compared to 2^(hs-z).
-# T is of size 128k × 128n with k ≤ n.
+# T is of size 128t × 128n with t ≤ n.
 # If we choose z = n, then T is square and is likely to have a
-# very small ker (while we need k >> hs-z).
-# Choosing z = n-1, we are sure that k ≥ 128 and we will
+# very small ker (while we need t >> hs-z).
+# Choosing z = n-1, we are sure that t ≥ 128 and we will
 # always have more than enough candidates.
 
 def gen_T(CanonicalA, zerows=n-1):
@@ -278,6 +278,7 @@ def main():
         pickle.dump((CanonicalA, T, NT), open(fprecomp, 'wb'))
     print('ok.')
 
+    print(f'Parameters: hs = {hs} bits, n = {n}, #0ws = n-1 = {n-1}')
     #basic_attack(ciph, mac)
     accelerated_attack(ciph, mac)
 

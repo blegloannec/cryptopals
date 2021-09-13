@@ -24,7 +24,7 @@
 * 8.61:
   * Blake-Wilson & Menezes, [_Unknown Key-Share Attacks on the Station-to-Station (STS) Protocol_](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.1051&rep=rep1&type=pdf), 1999
 * 8.62: [LLL](https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm)
-  * Howgrave-Graham & Smart, [_Lattice Attacks on Digital Signature Schemes_](https://www.hpl.hp.com/techreports/1999/HPL-1999-90.pdf), pub. 2001 (rep.1999)
+  * Howgrave-Graham & Smart, [_Lattice Attacks on Digital Signature Schemes_](https://www.hpl.hp.com/techreports/1999/HPL-1999-90.pdf), pub. 2001 (rep. 1999)
 * 8.63: [GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
   * [GCM NIST specification](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
   * [Factorization of polynomials over finite fields](https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields), [Cantor–Zassenhaus](https://en.wikipedia.org/wiki/Cantor%E2%80%93Zassenhaus_algorithm)
