@@ -87,8 +87,8 @@ int -> bin repr (0b..)     bin(i)
 
 * 3.17 (CBC padding oracle): A simple padding oracle leak allows easy decryption.
 * 7.51 (CRIME): Analog to timing-leak attacks but taking advantage of compression. Not that surprising in theory, but performs amazingly well in practice.
-* 8.62 (ECDSA biased nonce): A minor bias of a few bits in the DSA temporary keys reveals the auth. key after only capturing a handful of signatures. Unbelievably powerful reduction to an LLL problem.
-* 8.64 (GCM short tags): When GCM is used with short truncated MACs, one captured message & an auth. oracle spectacularly snowball to revealing the auth. key.
+* 8.62 (ECDSA biased nonces): A minor bias of a few bits in the DSA temporary keys reveals the private key after only capturing a handful of signatures. Unbelievably powerful reduction to an LLL problem.
+* 8.64 (GCM short tags): When GCM is used with short truncated MACs, a single captured message + an available auth. oracle spectacularly snowball to revealing the auth. key.
 
 #### Honorable mentions
 
