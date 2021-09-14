@@ -200,8 +200,8 @@ def basic_attack(ciph, mac):
     N = r_nullspace(K)
     assert len(N) == 1
     h_ = N[0]
-    print(hex(_h))
-    print(hex(h_))
+    print(f'secret h = {hex(_h)}')
+    print(f'found  h = {hex(h_)}')
     assert h_ == _h
 
 def accelerated_attack(ciph, mac):
@@ -255,8 +255,8 @@ def accelerated_attack(ciph, mac):
             print(f'Updating N(T)...')
             NewNT = r_nullspace(NewT)
     h_ = X.M[0]
-    print(hex(_h))
-    print(hex(h_))
+    print(f'secret h = {hex(_h)}')
+    print(f'found  h = {hex(h_)}')
     assert h_ == _h
 
 

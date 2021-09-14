@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# GCM NIST specification
+# https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.strxor import strxor
 from poly2 import *

@@ -19,8 +19,10 @@
 * 8.58: [Pollard's kangaroo](https://en.wikipedia.org/wiki/Pollard's_kangaroo_algorithm)
   * Pollard, [_Monte  Carlo  Methods  for  Index  Computation (mod  p)_](https://www.ams.org/journals/mcom/1978-32-143/S0025-5718-1978-0491431-9/S0025-5718-1978-0491431-9.pdf), 1978
 * 8.59: [Weierstrass](https://en.wikipedia.org/wiki/Weierstrass_elliptic_function) [elliptic curve](https://en.wikipedia.org/wiki/Elliptic_curve)
+  * Modular √: [Shanks–Tonelli](https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm)
 * 8.60: [Montgomery curve](https://en.wikipedia.org/wiki/Montgomery_curve) (in particular equivalence and mapping)
   * [Explicit-Formulas Database](https://hyperelliptic.org/EFD/index.html)
+  * Fouque _et al._, [_Fault Attack on Elliptic Curve with Montgomery Ladder Implementation_](https://www.di.ens.fr/~fouque/pub/fdtc08.pdf), 2008
 * 8.61:
   * Blake-Wilson & Menezes, [_Unknown Key-Share Attacks on the Station-to-Station (STS) Protocol_](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.1051&rep=rep1&type=pdf), 1999
 * 8.62: [LLL](https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm)

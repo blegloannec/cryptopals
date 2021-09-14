@@ -213,7 +213,7 @@ def r_system_solve(M: RMatrix, b: int) -> int:
                 bi = 0
             aset |= j
         if bi:
-            return -1
+            return None
     return a
 
 def r_inverse(M: RMatrix):
@@ -319,7 +319,7 @@ def _sanity_check4(it=100):
         M = r_random(r, c)
         b = random.randint(0, (1<<r)-1)
         a = r_system_solve(M, b)
-        if a < 0:
+        if a is None:
             for x in range(1<<c):
                 assert rv_mul(M, x) != b
         else:

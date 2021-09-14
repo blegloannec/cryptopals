@@ -6,12 +6,16 @@
 
 * [PyCryptodome](https://www.pycryptodome.org/en/latest/src/api.html)
 * [IACR Publications DB](https://www.iacr.org/publications/access.php)
+* [NIST Projects](https://csrc.nist.gov/projects) (US gov. approved standards)
 
 ## References
 
+* 1.7: [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) / [ECB](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_codebook_(ECB))
 * 2.9: [PKSC](https://en.wikipedia.org/wiki/PKCS) #7 - RFC [5652](https://tools.ietf.org/html/rfc5652)
+* 2.10: [CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_block_chaining_(CBC))
 * 3.17: [CBC padding oracle](https://en.wikipedia.org/wiki/Padding_oracle_attack)
   * Vaudenay, [_Security Flaws Induced by CBC Padding_](https://www.iacr.org/cryptodb/archive/2002/EUROCRYPT/2850/2850.pdf), 2002
+* 3.18-20: [CTR](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_(CTR))
 * 3.21-24: [Mersenne Twister (pseudocode)](https://en.wikipedia.org/wiki/Mersenne_Twister)
   * Makoto Matsumoto's [MT page](http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/emt.html)
 * 4.28-29: [SHA-1 (pseudocode)](https://en.wikipedia.org/wiki/SHA-1)
@@ -76,3 +80,19 @@ hex str -> bytes           bytes.fromhex(h)
 int -> hex repr (0x..)     hex(i)
 int -> bin repr (0b..)     bin(i)
 ```
+
+## Personal favorites
+
+#### Most valuable
+
+* 3.17 (CBC padding oracle): A simple padding oracle leak allows easy decryption.
+* 7.51 (CRIME): Analog to timing-leak attacks but taking advantage of compression. Not that surprising in theory, but performs amazingly well in practice.
+* 8.62 (ECDSA biased nonce): A minor bias of a few bits in the DSA temporary keys reveals the auth. key after only capturing a handful of signatures. Unbelievably powerful reduction to an LLL problem.
+* 8.64 (GCM short tags): When GCM is used with short truncated MACs, one captured message & an auth. oracle spectacularly snowball to revealing the auth. key.
+
+#### Honorable mentions
+
+* 4.29 (Merkle–Damgård secret-prefix MAC): On why one should not consider a hash function as an inviolable black box when building a MAC (and use HMAC instead).
+* 7.50 (CBC-MAC hashing): On why (conversely) a MAC with a fixed key does not make a proper hash function (it is only true for HMAC by design).
+* 8.61 (RSA sig. dup.): On using discrete log techniques to build RSA keys to validate a given signature (or decrypt a given message to a target plaintext).
+* 8.63 (GCM repeated nonce): Repeating a GCM nonce once already (almost) reveals the auth. key. Interesting for the maths it involves, not that surprising though.

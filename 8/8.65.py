@@ -107,23 +107,21 @@ def gen_canonical_A(print_progress=True):
     return CanonicalA
 
 # If we can find some d such that the first z lines of Ad are forced
-# to those of B, then the first z bits of (B+Ad)*h will be 0, and there will
-# remain hs-z bits to cancel.
-# Let T be the matrix whose 128n columns are the z first lines of
+# to those of B, then the first z bits of (B+Ad)*h will be 0, and there
+# will remain hs-z bits to cancel.
+# Let T be the matrix whose 128n columns are the first z lines of
 # each of the 128n matrices A(e1) .. A(en).
-# Let b be the 128n-bit vector of the lines of B.
+# Let b be the 128z-bit vector of the first z lines of B.
 # We are looking for d such that T*d = b.
 
 # In 8.64, we had b = 0, d in ker T and were choosing z < n
-# to make sure dim ker T > 0 (otherwise the only solution
-# if 0).
+# to make sure dim ker T > 0 (otherwise the only solution is 0).
 # Here, having b ≠ 0, if we choose z = n, then T is square and
-# is actually invertible, but a = T^(-1) b ≠ 0 and we
-# can try a as an alteration vector that forces n bits to 0
-# instead of n-1.
+# is actually invertible, but d = T^-1 b ≠ 0 and we can try d as
+# an alteration vector that forces n bits to 0 instead of n-1.
 # Of course this does not always work since we only have one vector
-# to try but we have a 2^-n chance that it works instead of 2^-(n+1)
-# without altering the size.
+# to try but we have a 1/2^(hs-n) chance that it works instead of
+# 1/2^(hs-(n-1)) without altering the size.
 
 def gen_T(CanonicalA, zerows=n):
     # zerows: number of rows of Ad to stuff in T (to force to 0)
@@ -223,7 +221,7 @@ def get_solution(T, B, zerows=n):
     for i in range(zerows):
         b |= B.M[i]<<(i*B.c)
     a = r_system_solve(T, b)
-    assert a >= 0
+    assert a is not None
     return a
 
 def attack():
@@ -254,10 +252,13 @@ def attack():
         zerows = min(n*bs//X.c, max_zerows)
         # NB: As we have n*bs here (instead of (n-1)*bs in 8.64), there is
         #     a small risk that k*z (k = dim ker K = X.c, z = zerows) gets
-        #     really close to n*bs and consequently that dim ker T ≥ n*bs-k*z
+        #     really close to n*bs and consequently that t = dim ker T ≥ n*bs-k*z
         #     gets too small compared to hs-z. To prevent this, we slightly
         #     reduce z whenever this happens.
-        if zerows > n and n*bs-X.c*zerows < 2*(hs-zerows):
+        if zerows > n and n*bs-X.c*zerows <= hs-zerows:
+            # garanties that n*bs-k*z ≥ hs-z + 1
+            # i.e. 2^t ≥ 2^(n*bs-k*z) ≥ 2 * 2^(hs-z)
+            # (nb of alter. vec. ≥ 2 × E[tries])
             zerows -= 1
         print("Updating canonical A(ei)'s...")
         NewA = [rcr_mul(Aei, X) for Aei in TruncA]
@@ -282,8 +283,8 @@ def attack():
             cnt += 1
 
     h_ = X.M[0]
-    print(hex(_h))
-    print(hex(h_))
+    print(f'secret h = {hex(_h)}')
+    print(f'found  h = {hex(h_)}')
     assert h_ == _h
 
 
