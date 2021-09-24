@@ -8,9 +8,10 @@ BS = 16
 
 
 data_file = 'data/20.txt'
-# we cheat a bit by setting the input to lowercase and extracting the charset
-_DATA = [base64.b64decode(line.strip()).lower()
-         for line in open(data_file, 'rb').readlines()]
+# as in 3.19, we set the input to lowercase and extract the charset
+with open(data_file, 'rb') as F:
+    _DATA = [base64.b64decode(line.strip()).lower()
+             for line in F.readlines()]
 ALPHA = set(b''.join(_DATA))
 zero = bytes(BS//2)
 _key = get_random_bytes(BS)

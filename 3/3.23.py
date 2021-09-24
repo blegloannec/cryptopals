@@ -65,12 +65,15 @@ if __name__=='__main__':
     # NB: We start with a fresh RNG, so right after the first twist.
     #     Otherwise we would have to try each window of n consecutive values
     #     within 2n consecutive outputs (until we get the predictions right).
+    print('Cloning RNG...')
     State = [untemper(rng()) for _ in range(MT.n)]
     rng_clone = MT()
     rng_clone.MT = State
     rng_clone.index = MT.n
+    print('Verifying...', end=' ', flush=True)
     for _ in range(1<<15):
         assert rng() == rng_clone()
+    print('ok')
 
 # Q: How would you modify MT19937 to make this attack hard?
 # > Let F : int32 -> int32 be an alternative tempering function.

@@ -22,9 +22,8 @@ def main():
     IV = b'\x00'*BS
     K = b'YELLOW SUBMARINE'
     AESCrypt = AES.new(K, AES.MODE_ECB)
-    F = open('data/10.txt', 'r')
-    I = base64.b64decode(F.read())
-    F.close()
+    with open('data/10.txt', 'r') as F:
+        I = base64.b64decode(F.read())
     O = CBC_decrypt(BS, AESCrypt.decrypt, strxor, I, IV)
     print(O.decode())
     assert CBC_encrypt(BS, AESCrypt.encrypt, strxor, O, IV) == I

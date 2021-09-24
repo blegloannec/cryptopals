@@ -25,6 +25,11 @@ def is_ECB(F, BS=16):
     return cnt<len(C)//BS
 
 if __name__=='__main__':
-    for _ in range(1<<15):
+    it = 1<<15
+    prompt = 'Detection tests...'
+    for i in range(it):
+        if i%(1<<10)==0:
+            print(prompt, f'{i+1:5d}/{it}', end='\r')
         res = is_ECB(mystery)
         assert res==ecb
+    print(prompt, f'{it}/{it}')

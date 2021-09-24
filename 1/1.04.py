@@ -10,11 +10,10 @@ def detect_single_byte_xor(I):
     return None
 
 if __name__=='__main__':
-    F = open('data/4.txt','r')
-    for L in F.readlines():
-        I = bytes.fromhex(L.strip())
-        O = detect_single_byte_xor(I)
-        if O is not None:
-            print(L, end='')
-            print(O.decode(), end='')
-    F.close()
+    with open('data/4.txt','r') as F:
+        for L in F.readlines():
+            I = bytes.fromhex(L.strip())
+            O = detect_single_byte_xor(I)
+            if O is not None:
+                print(L, end='')
+                print(O.decode(), end='')

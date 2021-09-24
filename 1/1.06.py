@@ -30,11 +30,10 @@ def analyze(Data, KSmin=2, KSmax=40):
     return K,O
 
 def main():
-    F = open('data/6.txt','r')
-    Data = base64.b64decode(F.read())
-    F.close()
+    with open('data/6.txt','r') as F:
+        Data = base64.b64decode(F.read())
     K,O = analyze(Data)
-    print('Discovered key:', K.decode())
+    print('Discovered key:', K)
     print()
     print(O.decode())
 
