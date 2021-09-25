@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 
 import os, time
-
-
-## ===== HMAC ===== ##
-import hashlib
-
-def bxor(A,B):
-    assert len(A)==len(B)
-    return bytes(a^b for a,b in zip(A,B))
-
-def HMAC_SHA1(K: bytes, m: bytes) -> bytes:
-    H = lambda x: hashlib.sha1(x).digest()
-    BS = 64  # 512 bits = 64 bytes
-    if len(K)>BS:
-        K = H(K)
-    K += bytes(BS-len(K))
-    opad = b'\x5c'*BS
-    ipad = b'\x36'*BS
-    return H(bxor(K,opad) + H(bxor(K,ipad) + m))
+from myhmac import HMAC_SHA1
 
 
 ## ===== SERVER ===== ##
@@ -37,7 +20,9 @@ class TimingLeakWebApp(BaseHTTPRequestHandler):
         for a,b in zip(A,B):
             if a!=b:
                 return False
-            time.sleep(0.002)  # /!\ this time 2 ms is NOT enough
+            # ARTIFICIAL DELAY
+            # /!\ this time 2 ms is NOT enough
+            time.sleep(0.002)
         return True
 
     def do_GET(self):
@@ -97,11 +82,11 @@ def guess_mac(fil='foo'):
 
 ## ===== MAIN ===== ##
 if __name__=='__main__':
-    print(f'Serving on port {PORT}...', end=' ')
+    print(f'Serving on port {PORT}...', end=' ', flush=True)
     httpd = HTTPServer(('', PORT), TimingLeakWebApp)
     httpd_thread = Thread(target=httpd.serve_forever, daemon=True)
     httpd_thread.start()
     print('running.')
     mac = guess_mac()
     print(f'guess  > {mac}')
-    assert guess is not None  # guess failed
+    assert mac is not None  # guess failed

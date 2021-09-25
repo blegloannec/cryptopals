@@ -1,32 +1,7 @@
 #!/usr/bin/env python3
 
 import os, time
-
-
-## ===== HMAC ===== ##
-import hashlib
-
-def bxor(A,B):
-    assert len(A)==len(B)
-    return bytes(a^b for a,b in zip(A,B))
-
-# Handmade HMAC - https://en.wikipedia.org/wiki/HMAC
-# equivalent to:
-#   from Cryptodome.Hash import HMAC, SHA1
-#   HMAC.new(K, msg=m, digestmod=SHA1).digest()
-# or simply (std lib.):
-#   import hmac
-#   hmac.new(K, msg=m, digestmod='sha1').digest()
-
-def HMAC_SHA1(K: bytes, m: bytes) -> bytes:
-    H = lambda x: hashlib.sha1(x).digest()
-    BS = 64  # 512 bits = 64 bytes
-    if len(K)>BS:
-        K = H(K)
-    K += bytes(BS-len(K))
-    opad = b'\x5c'*BS
-    ipad = b'\x36'*BS
-    return H(bxor(K,opad) + H(bxor(K,ipad) + m))
+from myhmac import HMAC_SHA1
 
 
 ## ===== SERVER ===== ##
@@ -45,7 +20,9 @@ class TimingLeakWebApp(BaseHTTPRequestHandler):
         for a,b in zip(A,B):
             if a!=b:
                 return False
-            time.sleep(0.005)  # 5 ms is enough
+            # ARTIFICIAL DELAY
+            # 5 ms is enough (at least for python3 on my computer)
+            time.sleep(0.005)
         return True
 
     def do_GET(self):
@@ -95,7 +72,7 @@ def guess_mac(fil='foo'):
 
 ## ===== MAIN ===== ##
 if __name__=='__main__':
-    print(f'Serving on port {PORT}...', end=' ')
+    print(f'Serving on port {PORT}...', end=' ', flush=True)
     httpd = HTTPServer(('', PORT), TimingLeakWebApp)
     httpd_thread = Thread(target=httpd.serve_forever, daemon=True)
     httpd_thread.start()

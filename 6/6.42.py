@@ -10,8 +10,8 @@
 
 import rsalib, re
 from rsalib import int_to_bytes
-from Crypto.Hash import SHA1
-from Crypto.Random import get_random_bytes
+from Cryptodome.Hash import SHA1
+from Cryptodome.Random import get_random_bytes
 
 ASN1 = b'ASN.1_ID_DATA'  # used to identify the algorithms used
 

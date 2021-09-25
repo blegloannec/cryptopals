@@ -3,6 +3,7 @@
 import rsalib
 from rsalib import int_to_bytes
 import base64, decimal
+from itertools import takewhile
 
 
 ## DATA
@@ -20,7 +21,7 @@ p2 = rsalib.encrypt(K, 2)  # = 2^e mod n
 decimal.getcontext().prec = K.n.bit_length()//3
 l, r = decimal.Decimal(0), decimal.Decimal(K.n-1)
 d2 = decimal.Decimal(2)
-for _ in range(K.n.bit_length()):
+for i in range(K.n.bit_length()):
     c2 = (p2*c2) % K.n
     # let d(i) = decrypted c2(i)
     #          = (2^i * msg) mod n
@@ -31,6 +32,10 @@ for _ in range(K.n.bit_length()):
         l = (l+r)/d2
     else:
         r = (l+r)/d2
+    # progress output
+    if i&7==0:
+        mr = bytes(takewhile((lambda c: 32<=c<127), int_to_bytes(int(r))))
+        print('>', mr.decode(), end='\r')
 msg = int(r)
 assert msg == _MSG
 print(int_to_bytes(msg))

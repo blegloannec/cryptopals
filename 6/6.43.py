@@ -25,7 +25,12 @@ s = 857042759984254168557880549501802188789837994940
 h = int.from_bytes(SHA1.new(msg).digest(), 'big')
 r_inv = pow(r, -1, q)
 # crack the private key by brute-forcing on k
+pc0 = -1
 for k in range(1<<16):
+    pc = 100*k//((1<<16)-1)
+    if pc>pc0:
+        print(f'Cracking key... {pc:2d}%', end='\r')
+        pc0 = pc
     # s = (h+xr)/k mod q
     # x = (sk-h)/r mod q
     x = ((s*k - h) * r_inv) % q

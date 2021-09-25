@@ -44,7 +44,7 @@ def randsig():
     return (r, s)
 
 for msg in msgs:
-    print(f'Verifying {msg}...', end='\t')
+    print(f'Verifying {msg}...', end='\t', flush=True)
     sig = randsig()
     assert dsalib.dsa_verify(y, msg, sig)
-    print('OK')
+    print('ok')

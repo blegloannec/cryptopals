@@ -10,7 +10,8 @@ BS = 16
 
 ## SECRET DATA
 # retrieve data from 1.07 (also /1/data/7.txt)
-DATA = base64.b64decode(open('data/25.txt', 'rb').read()) 
+with open('data/25.txt', 'rb') as F:
+    DATA = base64.b64decode(F.read())
 DATA = unpad(AES.new(b'YELLOW SUBMARINE', AES.MODE_ECB).decrypt(DATA), BS)
 _KEY = get_random_bytes(BS)
 _NONCE = get_random_bytes(BS//2)

@@ -105,14 +105,14 @@ def attack(c : bytes):
     M = [(2*B, 3*B-1)]
     c0 = (c*pow(s0,e,n)) % n
     i = 1
-    print('ok.')
+    print('ok')
     
     # Step 2.a
     print('Step  2a.....', end=' ', flush=True)
     s = ceil_div(n, 3*B)
     while not oracle(c0*pow(s,e,n)):
         s += 1
-    print('ok.')
+    print('ok')
     
     while True:
         print(f'Steps 2b-4... {i}', end='\r', flush=True)
@@ -152,8 +152,8 @@ def attack(c : bytes):
 
 
 ## === MAIN === ##
-if __name__=='__main__':
-    # Sanity check
+def sanity_check():
+    global k, _k,K
     print('Sanity check...', end=' ', flush=True)
     k = 96  # byte length of the key (article notation)
     _k, K = rsalib.gen_key(8*k)
@@ -166,19 +166,21 @@ if __name__=='__main__':
     assert is_PKSC1_conform(d)
     m1 = unpad(d)
     assert m1 == m0
-    print('ok.\n')
-    
-    # 6.47
+    print('ok')
+
+def main_6_47():
+    global k, _k,K
     k = 1<<5  # byte length of the key (article notation)
     _k, K = rsalib.gen_key(8*k)
     print(f'Key size = {K.n.bit_length()}')
     _MSG = b'kick it, CC'
     CIPH = rsalib.encrypt(K, int.from_bytes(_MSG, 'big'))
     deciph = int_to_bytes(attack(CIPH))  # attack
-    print(f'\n{deciph}\n')
+    print(f'\n{deciph}')
     assert deciph == _MSG
-    
-    # 6.48
+
+def main_6_48():
+    global k, _k,K
     k = 96
     _k, K = rsalib.gen_key(8*k)
     print(f'Key size = {K.n.bit_length()}')
@@ -188,3 +190,11 @@ if __name__=='__main__':
     deciph = unpad(attack(CIPH).to_bytes(k, 'big'))  # attack
     print(f'\n{deciph}')
     assert deciph == _MSG
+
+
+if __name__=='__main__':
+    sanity_check()
+    print()
+    main_6_47()
+    print()
+    main_6_48()
