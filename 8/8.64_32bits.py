@@ -15,7 +15,7 @@ anymore...
 import os, secrets
 import gcm, poly2
 from matrix2 import *
-import os.path, pickle
+import pickle
 
 
 ## Parameters
@@ -277,10 +277,11 @@ def main():
     global CanonicalA, T, NT
     #ciph,mac = ciph_mac = truncated_GCM_encrypt(_key, _nonce, _msg)
 
-    if os.path.exists(fprecomp):
-        print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
-        CanonicalA, T, NT = pickle.load(open(fprecomp, 'rb'))
-    else:
+    try:
+        with open(fprecomp, 'rb') as F:
+            print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
+            CanonicalA, T, NT = pickle.load(F)
+    except FileNotFoundError:
         print('Computing T and N(T)...', end=' ', flush=True)
         CanonicalA = gen_canonical_A()
         T = gen_T(CanonicalA)

@@ -3,7 +3,7 @@
 import os, secrets
 import gcm, poly2
 from matrix2 import *
-import os.path, pickle
+import pickle
 
 
 ## Parameters
@@ -292,10 +292,11 @@ def attack():
 def main():
     global CanonicalA, T, Tinv
 
-    if os.path.exists(fprecomp):
-        print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
-        CanonicalA, T = pickle.load(open(fprecomp, 'rb'))
-    else:
+    try:
+        with open(fprecomp, 'rb') as F:
+            print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
+            CanonicalA, T = pickle.load(F)
+    except FileNotFoundError:
         print('Computing T...', end=' ', flush=True)
         CanonicalA = gen_canonical_A()
         T = gen_T(CanonicalA)

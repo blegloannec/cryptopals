@@ -8,7 +8,8 @@ from dsalib import p, q, g
 y = 0x2d026f4bf30195ede3a088da85e398ef869611d0f68f0713d51c9c1a3a26c95105d915e2d8cdf26d056b86b8a7b85519b1c23cc3ecdc6062650462e3063bd179c2a6581519f674a61f1d89a1fff27171ebc1b93d4dc57bceb7ae2430f98a6a4d83d8279ee65d71c1203d2c96d65ebbf7cce9d32971c3de5084cce04a2e147821
 
 # parsing data
-In = open('data/44.txt', 'r').readlines()
+with open('data/44.txt', 'r') as F:
+    In = F.readlines()
 Data = []
 for i in range(0, len(In), 4):
     msg = In[i].strip('\n').split(': ')[1]

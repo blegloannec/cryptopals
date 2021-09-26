@@ -3,7 +3,7 @@
 import os, secrets
 import gcm, poly2
 from matrix2 import *
-import os.path, pickle
+import pickle
 
 
 ## Parameters
@@ -267,10 +267,11 @@ def main():
     #assert truncated_GCM_decrypt(_key, _nonce, ciph_mac) == _msg
     #assert oracle(ciph_mac)
 
-    if os.path.exists(fprecomp):
-        print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
-        CanonicalA, T, NT = pickle.load(open(fprecomp, 'rb'))
-    else:
+    try:
+        with open(fprecomp, 'rb') as F:
+            print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
+            CanonicalA, T, NT = pickle.load(F)
+    except FileNotFoundError:
         print('Computing T and N(T)...', end=' ', flush=True)
         CanonicalA = gen_canonical_A()
         T = gen_T(CanonicalA)
