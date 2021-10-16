@@ -29,6 +29,8 @@ def oracle_cbc(P: bytes) -> int:  # using a CBC cipher (padding after compressio
 
 
 if __name__=='__main__':
+    print(f'Secret:  {_SECRET.decode()}')
+    
     # Attack on the compression + non-padded cipher
     Guess = bytearray()
     for i in range(SECSIZE):
@@ -40,7 +42,8 @@ if __name__=='__main__':
             if c<cmin:
                 cmin = c; amin = a
         Guess[i] = amin
-        print(Guess.decode())
+        print(f'Stream:  {Guess.decode()}', end='\r', flush=True)
+    print()
     assert Guess == _SECRET
 
     # Attack on the compression + padded cipher
@@ -68,6 +71,7 @@ if __name__=='__main__':
             if (c,-k)<cmin:
                 cmin = (c,-k); amin = a
         Guess[i] = amin
-        print(Guess.decode())
+        print(f'CBC pad: {Guess.decode()}', end='\r', flush=True)
         assert Guess[i] == _SECRET[i]
+    print()
     assert Guess == _SECRET

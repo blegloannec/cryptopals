@@ -2,6 +2,8 @@
 
 **Link:** https://cryptopals.com/
 
+**Done:** 66/66
+
 ## Resources
 
 * [PyCryptodome](https://www.pycryptodome.org/en/latest/src/api.html)
