@@ -65,8 +65,7 @@
 * [`secrets`](https://docs.python.org/3/library/secrets.html): secure (strongly non predictable and reproducible) alternative to the [`random`](https://docs.python.org/3/library/random.html) module (Mersenne Twister-based pseudo-random number generator, reproducible)
 * [`hashlib`](https://docs.python.org/3/library/hashlib.html): secure hash functions
 * [`hmac`](https://docs.python.org/3/library/hmac.html): keyed-hashing for authentication
-* [`base64`](https://docs.python.org/3/library/base64.html)
-* [`binascii`](https://docs.python.org/3/library/binascii.html)
+* [`base64`](https://docs.python.org/3/library/base64.html): common binary-to-text encodings
 
 #### Conversions
 
