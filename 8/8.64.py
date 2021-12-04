@@ -3,7 +3,7 @@
 import os, secrets
 import gcm, poly2
 from matrix2 import *
-import pickle
+import pickle, bz2
 
 
 ## Parameters
@@ -15,7 +15,7 @@ HS = 2           # 2 bytes = 16 bits hash size
 hs = 8*HS
 
 # pre-computed data file (re-computed when missing)
-fprecomp = f'64_data_{n}.pickle'
+fprecomp = f'64_data_{n}.pickle.bz2'
 
 
 ## SECRET DATA
@@ -270,13 +270,14 @@ def main():
     try:
         with open(fprecomp, 'rb') as F:
             print(f'Loading pre-computed data ({fprecomp})...', end=' ', flush=True)
-            CanonicalA, T, NT = pickle.load(F)
+            CanonicalA, T, NT = pickle.loads(bz2.decompress(F.read()))
     except FileNotFoundError:
         print('Computing T and N(T)...', end=' ', flush=True)
         CanonicalA = gen_canonical_A()
         T = gen_T(CanonicalA)
         NT = r_nullspace(T)
-        pickle.dump((CanonicalA, T, NT), open(fprecomp, 'wb'))
+        with open(fprecomp, 'wb') as F:
+            F.write(bz2.compress(pickle.dumps((CanonicalA, T, NT))))
     print('ok.')
 
     print(f'Parameters: hs = {hs} bits, n = {n}, #0ws = n-1 = {n-1}')

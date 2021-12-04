@@ -31,6 +31,5 @@
   * [GCM NIST specification](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
   * [Factorization of polynomials over finite fields](https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields), [Cantor–Zassenhaus](https://en.wikipedia.org/wiki/Cantor%E2%80%93Zassenhaus_algorithm)
   * Joux, [_Authentication Failures in NIST version of GCM_](https://csrc.nist.gov/csrc/media/projects/block-cipher-techniques/documents/bcm/comments/800-38-series-drafts/gcm/joux_comments.pdf), 2006
-  * See also: Saarinen, [_Cycling Attacks on GCM (...)_](https://eprint.iacr.org/2011/202.pdf), 2011
 * 8.64-65:
   * Ferguson, [_Authentication weaknesses in GCM_](https://csrc.nist.gov/CSRC/media/Projects/Block-Cipher-Techniques/documents/BCM/Comments/CWC-GCM/Ferguson2.pdf), 2005

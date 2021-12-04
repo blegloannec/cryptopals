@@ -10,7 +10,7 @@
 * [IACR Publications DB](https://www.iacr.org/publications/access.php)
 * [NIST Projects](https://csrc.nist.gov/projects) (US gov. approved standards)
 
-## References
+## References (see also [`8/`](8/))
 
 * 1.7: [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) / [ECB](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_codebook_(ECB))
 * 2.9: [PKSC](https://en.wikipedia.org/wiki/PKCS) #7 - RFC [5652](https://tools.ietf.org/html/rfc5652)
@@ -55,7 +55,7 @@
   * Improved by: Sasaki _et al._, [_New Message Difference for MD4_](https://www.iacr.org/archive/fse2007/45930331/45930331.pdf), 2007
 * 7.56: [RC4](https://en.wikipedia.org/wiki/RC4)
   * [On the Security of RC4 in TLS and WPA](http://www.isg.rhul.ac.uk/tls/): [paper](http://www.isg.rhul.ac.uk/tls/RC4biases.pdf), [biases](http://www.isg.rhul.ac.uk/tls/biases.pdf)
-  * See also: Fluhrer–Mantin–Shamir, [_Weaknesses in the Key Scheduling Algorithm of RC4_](https://link.springer.com/content/pdf/10.1007%2F3-540-45537-X_1.pdf), 2001
+  * See also (attack implemented in `aircrack-ng`): Klein, [_Attacks on the RC4 stream cipher_](http://boisson.homeip.net/Luminy/RC4.pdf), 2006
 
 ## Using Python 3
 
