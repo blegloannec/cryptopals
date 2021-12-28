@@ -22,24 +22,26 @@ for i in range(0, len(In), 4):
 
 
 # assume that two messages have the same k
+# (detection: r1 = r2 = g^k)
 # s1 = (h1+xr)/k          mod q
 # s2 = (h2+xr)/k          mod q
 # then s1-s2 = (h1-h2)/k  mod q
 # k = (h1-h2)/(s1-s2)     mod q
-for i in range(len(Data)):
-    s1, r1, h1 = Data[i]
-    for j in range(i+1, len(Data)):
-        s2, r2, h2 = Data[j]
-        try:
-            # assume same k for msg i & j
-            k = ((h1-h2) * pow(s1-s2, -1, q)) % q
-            # then try retrieving x from k (see 6.43)
-            x0 = ((s1*k - h1) * pow(r1, -1, q)) % q
-            if pow(g, x0, p) == y:
-                print(f'{i:2d} {j:2d} {hex(x0)}')
-                x = x0
-        except ValueError:
-            pass
+DB = {}
+for j in range(len(Data)):
+    s2, r2, h2 = Data[j]
+    if r2 in DB:
+        i = DB[r2]
+        s1, r1, h1 = Data[i]
+        # same k for msg i & j
+        k = ((h1-h2) * pow(s1-s2, -1, q)) % q
+        assert pow(g, k, p) % q == r1
+        # retrieve x from k (see 6.43)
+        x = ((s1*k - h1) * pow(r1, -1, q)) % q
+        assert pow(g, x, p) == y
+        print(f'{i:2d} {j:2d} {hex(x)}')
+    else:
+        DB[r2] = j
 res = SHA1.new(hex(x)[2:].encode()).hexdigest()
 print(res)
 assert res == 'ca8f6f7c66fa362d40760d135b763eb8527d3d52'
